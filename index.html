@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>कश्यप वैवाहिक मंच</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #fff8f3;
+      color: #333;
+    }
+
+    header {
+      background: #8b1538;
+      color: white;
+      text-align: center;
+      padding: 28px 12px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 30px;
+    }
+
+    header p {
+      margin-bottom: 0;
+    }
+
+    nav {
+      background: #65102a;
+      padding: 12px;
+      text-align: center;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 8px;
+      display: inline-block;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 45px 15px;
+      background: linear-gradient(135deg, #fff0e5, #ffe0e8);
+    }
+
+    .hero h2 {
+      color: #8b1538;
+      font-size: 27px;
+    }
+
+    .btn {
+      display: inline-block;
+      background: #8b1538;
+      color: white;
+      padding: 12px 22px;
+      border-radius: 7px;
+      text-decoration: none;
+      margin: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .section {
+      max-width: 850px;
+      margin: auto;
+      padding: 25px 15px;
+      text-align: center;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .card {
+      background: white;
+      padding: 22px;
+      border-radius: 12px;
+      box-shadow: 0 3px 12px #00000012;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 7px 0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+
+    form {
+      max-width: 450px;
+      margin: auto;
+      text-align: left;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    footer {
+      background: #65102a;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      margin-top: 25px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>💍 कश्यप वैवाहिक मंच</h1>
+  <p>रिश्ते अपनों से, साथ जीवनभर का ❤️</p>
+</header>
+
+<nav>
+  <a href="#home">होम</a>
+  <a href="#about">हमारे बारे में</a>
+  <a href="#register">रजिस्ट्रेशन</a>
+  <a href="#search">रिश्ता खोजें</a>
+</nav>
+
+<section class="hero" id="home">
+  <h2>आपके नए जीवन की शुरुआत यहाँ से ❤️</h2>
+  <p>कश्यप, मांझी और निषाद समुदाय के लिए वैवाहिक परिचय मंच।</p>
+  <a class="btn" href="#register">अपनी प्रोफाइल बनाएँ</a>
+  <a class="btn" href="#search">जीवनसाथी खोजें</a>
+</section>
+
+<section class="section" id="about">
+  <h2>हमारा उद्देश्य</h2>
+  <p>उपयुक्त जीवनसाथी खोजने के लिए लोगों और परिवारों को एक मंच पर जोड़ना।</p>
+  <div class="cards">
+    <div class="card">
+      <h3>👤 वैवाहिक परिचय</h3>
+      <p>अपनी जानकारी के साथ प्रोफाइल बनाने की सुविधा।</p>
+    </div>
+    <div class="card">
+      <h3>🔎 रिश्ता खोजें</h3>
+      <p>अपनी पसंद के अनुसार जीवनसाथी खोजने की सुविधा।</p>
+    </div>
+    <div class="card">
+      <h3>🔐 सुरक्षित संपर्क</h3>
+      <p>सदस्यों की गोपनीयता और सुरक्षा हमारी प्राथमिकता है।</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="search">
+  <h2>💑 जीवनसाथी खोजें</h2>
+  <form onsubmit="alert('यह शुरुआती डेमो है। रिश्ता खोजने की सुविधा डेटाबेस जुड़ने के बाद काम करेगी।'); return false;">
+    <label>आप किसके लिए रिश्ता खोज रहे हैं?</label>
+    <select required>
+      <option value="">चुनें</option>
+      <option>लड़का</option>
+      <option>लड़की</option>
+    </select>
+
+    <label>राज्य</label>
+    <select>
+      <option>उत्तर प्रदेश</option>
+      <option>अन्य राज्य</option>
+    </select>
+
+    <label>समुदाय</label>
+    <select>
+      <option>कश्यप</option>
+      <option>मांझी</option>
+      <option>निषाद</option>
+    </select>
+
+    <button class="btn" type="submit">रिश्ता खोजें</button>
+  </form>
+</section>
+
+<section class="section" id="register">
+  <h2>📝 रजिस्ट्रेशन</h2>
+  <p>अपना वैवाहिक परिचय दर्ज करने के लिए नीचे दिए गए विकल्प पर जाएँ।</p>
+  <a class="btn" href="mailto:contact@example.com?subject=Kashyap%20Vivahik%20Manch%20Registration">रजिस्ट्रेशन के लिए संपर्क करें</a>
+  <p>यह शुरुआती डिजाइन है। वास्तविक रजिस्ट्रेशन के लिए सुरक्षित लॉगिन और डेटाबेस जोड़ना बाकी है।</p>
+</section>
+
+<footer>
+  <p>© 2026 कश्यप वैवाहिक मंच</p>
+  <p>रिश्ते अपनों से, साथ जीवनभर का।</p>
+</footer>
+
+</body>
+</html>
