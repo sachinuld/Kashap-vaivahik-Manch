@@ -495,11 +495,11 @@ $("deleteAccountBtn").addEventListener("click",async()=>{
     $("deleteConfirmPassword").value="";
     if(reauthError)throw new Error("पासवर्ड की पुष्टि नहीं हुई। पासवर्ड जाँचकर फिर कोशिश करें।");
     if(!reauthData.user||reauthData.user.id!==user.id)throw new Error("अकाउंट की पुष्टि नहीं हो सकी। दोबारा लॉगिन करके कोशिश करें।");
-    const {data,error}=await sb.functions.invoke("delete-account",{body:{confirmation:"DELETE",confirmEmail:user.email}});
+    const {data,error}=await sb.functions.invoke("delete-account",{body:{confirmation:"DELETE",confirmEmail:user.email,password}});
     if(error){
       let detail=error.message||"Edge Function अनुरोध विफल हुआ।";
       try{if(error.context&&typeof error.context.json==="function"){const payload=await error.context.json();if(payload?.error)detail=payload.error;}}catch{}
-      throw new Error(detail+" — जाँचें कि Supabase में delete-account Edge Function deploy हुई है।");
+      throw new Error(detail);
     }
     if(!data||data.ok!==true)throw new Error(data?.error||"अकाउंट हटाने की पुष्टि सर्वर से नहीं मिली।");
     try{await sb.auth.signOut({scope:"local"});}catch{}
