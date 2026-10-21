@@ -35,6 +35,9 @@
 .message-toast{position:fixed;right:18px;bottom:18px;z-index:1000;width:min(360px,calc(100vw - 36px));display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:15px 16px;background:#fff;border:1px solid #e5b9c8;border-left:5px solid var(--wine);border-radius:14px;box-shadow:0 15px 40px #3d102522;cursor:pointer}
 .message-toast strong{color:var(--wine);font-size:14px}.message-toast span{grid-column:1;color:var(--muted);font-size:13px;overflow-wrap:anywhere}.message-toast button{grid-column:2;grid-row:1/3;align-self:start;padding:4px 7px;background:#fff0f2;color:var(--wine);border-radius:8px}
 
+
+.danger-zone{margin-top:24px;border:1px solid #e8a7af;background:#fff7f7;border-radius:16px;padding:18px}.danger-zone h3{margin:0 0 7px;color:#9b1c32;font-size:18px}.danger-zone p{margin:7px 0;color:#6f5156;font-size:13px}.danger-zone .danger{background:#a61b34;color:#fff;border:0}.danger-zone .danger:hover{background:#7f1026}.danger-zone .delete-panel{margin-top:15px;border-top:1px solid #f0cdd1;padding-top:15px}.danger-zone .delete-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.danger-zone input{width:100%;border:1px solid #e8c8cd;border-radius:10px;padding:11px 12px;background:#fff}.danger-zone .check{margin-top:12px}.danger-zone .hint-danger{font-size:12px;color:#8f293b}.danger-zone .status{margin-top:12px}
+@media(max-width:520px){.danger-zone .delete-grid{grid-template-columns:1fr}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body>
@@ -74,6 +77,25 @@
   </div>
   <div id="chatStatus" class="status" role="status" aria-live="polite"></div>
   <p id="liveChatState" class="small-muted" aria-live="polite">लाइव चैट कनेक्शन शुरू हो रहा है…</p>
+</div>
+
+<div class="danger-zone" id="deleteAccountZone">
+  <h3>⚠️ मेरा अकाउंट और प्रोफाइल हमेशा के लिए हटाएँ</h3>
+  <p>इससे आपकी प्रोफाइल, रुचि अनुरोध, चैट संदेश और Supabase में आपकी प्रोफाइल फोटो फ़ाइलें हट जाएँगी। यह कार्रवाई वापस नहीं की जा सकती।</p>
+  <button class="btn danger" type="button" id="showDeleteAccountBtn">अकाउंट हटाने के विकल्प खोलें</button>
+  <div class="delete-panel hidden" id="deleteAccountPanel">
+    <p><strong>यह स्थायी कार्रवाई है।</strong> पुष्टि के लिए अपना लॉगिन ईमेल, वर्तमान पासवर्ड और नीचे दिए शब्द दर्ज करें।</p>
+    <div class="delete-grid">
+      <div class="field"><label for="deleteConfirmEmail">अपना लॉगिन ईमेल</label><input id="deleteConfirmEmail" type="email" autocomplete="email" placeholder="अपने अकाउंट का ईमेल"></div>
+      <div class="field"><label for="deleteConfirmPassword">वर्तमान पासवर्ड</label><input id="deleteConfirmPassword" type="password" autocomplete="current-password" placeholder="पासवर्ड दोबारा लिखें"></div>
+      <div class="field"><label for="deleteConfirmWord">पुष्टि के लिए DELETE लिखें</label><input id="deleteConfirmWord" type="text" autocomplete="off" placeholder="DELETE"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="deleteConfirmCheck"><span>मैं समझता/समझती हूँ कि मेरा अकाउंट और उससे जुड़ा डेटा हमेशा के लिए हटाया जाएगा।</span></label>
+    <p class="hint-danger">नोट: केवल इस वेबसाइट के Supabase Storage में रखी आपकी प्रोफाइल फोटो फ़ाइलें हटेंगी। किसी बाहरी वेबसाइट के फोटो URL की मूल फ़ाइल यहाँ से नहीं मिटाई जा सकती।</p>
+    <button class="btn danger" type="button" id="deleteAccountBtn">अकाउंट हमेशा के लिए हटाएँ</button>
+    <button class="btn outline" type="button" id="cancelDeleteAccountBtn">रद्द करें</button>
+    <div id="deleteAccountStatus" class="status" role="status" aria-live="polite"></div>
+  </div>
 </div>
 
 </div></div></div><div class="notice">अपनी प्रोफाइल में फोन नंबर, घर का पूरा पता, पहचान पत्र या अन्य अति-निजी जानकारी न लिखें। सार्वजनिक प्रोफाइल सभी आगंतुकों को दिखाई दे सकती है।</div></div></section>
@@ -419,6 +441,59 @@ $("removePhotoBtn").addEventListener("click",async()=>{
  }
  $("photoUrl").value="";$("photoFile").value="";refreshPhotoPreview("");
  status("photoUploadStatus","फोटो का लिंक हटा दिया है। इसे डेटाबेस में लागू करने के लिए “प्रोफाइल सेव करें” दबाएँ।","info");
+});
+
+
+// Permanent account deletion must be handled by a server-side Edge Function.
+// Never put the Supabase service-role/secret key in this HTML file.
+$("showDeleteAccountBtn").addEventListener("click",()=>{
+  if(!user){status("authStatus","अकाउंट हटाने के लिए पहले लॉगिन करें।","error");return;}
+  $("deleteAccountPanel").classList.remove("hidden");
+  $("deleteAccountStatus").textContent="";$("deleteAccountStatus").className="status";
+  $("deleteConfirmEmail").value="";$("deleteConfirmPassword").value="";$("deleteConfirmWord").value="";$("deleteConfirmCheck").checked=false;
+  $("deleteConfirmEmail").focus();
+});
+$("cancelDeleteAccountBtn").addEventListener("click",()=>{
+  $("deleteAccountPanel").classList.add("hidden");
+  $("deleteConfirmPassword").value="";
+  $("deleteAccountStatus").textContent="";$("deleteAccountStatus").className="status";
+});
+$("deleteAccountBtn").addEventListener("click",async()=>{
+  clearStatus("deleteAccountStatus");
+  if(!sb||!user){status("deleteAccountStatus","आपका लॉगिन सत्र उपलब्ध नहीं है। दोबारा लॉगिन करें।","error");return;}
+  const typedEmail=$("deleteConfirmEmail").value.trim().toLowerCase();
+  const currentEmail=String(user.email||"").trim().toLowerCase();
+  const typedWord=$("deleteConfirmWord").value.trim();
+  const password=$("deleteConfirmPassword").value;
+  if(!currentEmail){status("deleteAccountStatus","इस अकाउंट में ईमेल उपलब्ध नहीं है। सहायता के लिए व्यवस्थापक से संपर्क करें।","error");return;}
+  if(typedEmail!==currentEmail){status("deleteAccountStatus","ईमेल आपके वर्तमान लॉगिन अकाउंट से मेल नहीं खाता।","error");return;}
+  if(typedWord!=="DELETE"){status("deleteAccountStatus","पुष्टि बॉक्स में ठीक DELETE लिखें।","error");return;}
+  if(!password){status("deleteAccountStatus","कार्रवाई की पुष्टि के लिए वर्तमान पासवर्ड दर्ज करें।","error");return;}
+  if(!$("deleteConfirmCheck").checked){status("deleteAccountStatus","आगे बढ़ने के लिए स्थायी डिलीट की पुष्टि वाला चेकबॉक्स चुनें।","error");return;}
+  const ok=window.confirm("अंतिम चेतावनी: आपकी प्रोफाइल, रुचि अनुरोध, चैट संदेश और इस सिस्टम में रखी प्रोफाइल फोटो फ़ाइलें स्थायी रूप से हटेंगी। यह वापस नहीं किया जा सकता। क्या आप जारी रखना चाहते हैं?");
+  if(!ok)return;
+  const button=$("deleteAccountBtn");button.disabled=true;button.textContent="अकाउंट हटाया जा रहा है…";
+  try{
+    // Re-authenticate with the current password before allowing permanent deletion.
+    const {data:reauthData,error:reauthError}=await sb.auth.signInWithPassword({email:user.email,password});
+    $("deleteConfirmPassword").value="";
+    if(reauthError)throw new Error("पासवर्ड की पुष्टि नहीं हुई। पासवर्ड जाँचकर फिर कोशिश करें।");
+    if(!reauthData.user||reauthData.user.id!==user.id)throw new Error("अकाउंट की पुष्टि नहीं हो सकी। दोबारा लॉगिन करके कोशिश करें।");
+    const {data,error}=await sb.functions.invoke("delete-account",{body:{confirmation:"DELETE",confirmEmail:user.email}});
+    if(error){
+      let detail=error.message||"Edge Function अनुरोध विफल हुआ।";
+      try{if(error.context&&typeof error.context.json==="function"){const payload=await error.context.json();if(payload?.error)detail=payload.error;}}catch{}
+      throw new Error(detail+" — जाँचें कि Supabase में delete-account Edge Function deploy हुई है।");
+    }
+    if(!data||data.ok!==true)throw new Error(data?.error||"अकाउंट हटाने की पुष्टि सर्वर से नहीं मिली।");
+    try{await sb.auth.signOut({scope:"local"});}catch{}
+    authUI(null);
+    $("deleteAccountPanel").classList.add("hidden");
+    status("authStatus","आपका अकाउंट और उससे जुड़ा डेटा स्थायी रूप से हटा दिया गया है।","success");
+    $("account").scrollIntoView({behavior:"smooth",block:"start"});
+    await loadPublic();
+  }catch(err){console.error(err);status("deleteAccountStatus","अकाउंट हटाया नहीं जा सका: "+(err.message||"अज्ञात त्रुटि"),"error");}
+  finally{button.disabled=false;button.textContent="अकाउंट हमेशा के लिए हटाएँ";}
 });
 
 refreshPhotoPreview("");
