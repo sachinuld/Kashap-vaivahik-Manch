@@ -39,6 +39,31 @@
 
 .danger-zone{margin-top:24px;border:1px solid #e8a7af;background:#fff7f7;border-radius:16px;padding:18px}.danger-zone h3{margin:0 0 7px;color:#9b1c32;font-size:18px}.danger-zone p{margin:7px 0;color:#6f5156;font-size:13px}.danger-zone .danger{background:#a61b34;color:#fff;border:0}.danger-zone .danger:hover{background:#7f1026}.danger-zone .delete-panel{margin-top:15px;border-top:1px solid #f0cdd1;padding-top:15px}.danger-zone .delete-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.danger-zone .delete-grid .field input{width:100%;border:1px solid #e8c8cd;border-radius:10px;padding:11px 12px;background:#fff}.danger-zone .check{display:flex;align-items:flex-start;gap:10px;width:100%;max-width:100%;margin-top:12px;min-width:0}.danger-zone .check input{display:block;width:18px;min-width:18px;max-width:18px;height:18px;margin:3px 0 0;flex:0 0 18px}.danger-zone .check span{display:block;flex:1 1 auto;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:normal;line-height:1.6}.danger-zone .hint-danger{font-size:12px;color:#8f293b}.danger-zone .status{margin-top:12px}
 @media(max-width:520px){.danger-zone .delete-grid{grid-template-columns:1fr}}
+
+/* Added safety, moderation, favorites and advanced search UI */
+.advanced-filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+.profile-secondary-actions{display:flex;gap:7px;flex-wrap:wrap;padding:0 14px 14px}
+.profile-secondary-actions .btn{flex:1 1 90px;padding:8px 8px;font-size:12px}
+.btn.tiny{font-size:12px;padding:8px 10px}
+.feature-manager,.admin-manager{margin-top:24px;padding:22px 0 0;border-top:1px solid var(--line)}
+.member-tools-grid,.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.tool-panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+.tool-panel h4{margin:0 0 12px;color:#482334}
+.tool-list{display:grid;gap:10px}
+.tool-item{border:1px solid var(--line);border-radius:12px;background:#fffdfd;padding:12px;min-width:0;overflow-wrap:anywhere}
+.tool-item strong{display:block;color:#3f2430}.tool-item .meta{color:var(--muted);font-size:12px;margin:4px 0 9px;overflow-wrap:anywhere}
+.tool-item-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tool-item-actions .btn{font-size:12px;padding:8px 10px}
+.admin-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.admin-stat{padding:14px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.admin-stat .num{display:block;font-size:24px;font-weight:850;color:var(--wine)}
+.admin-stat .label{font-size:12px;color:var(--muted)}
+.report-reason{display:inline-block;border-radius:99px;background:#fff2d9;color:#7d5415;padding:3px 8px;font-size:11px;font-weight:800;margin:5px 0}
+.moderation-hidden{display:inline-block;background:#fff0f0;color:#9a1d2e;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:800}
+.status-note{font-size:12px;color:var(--muted);margin-top:8px}
+@media(max-width:800px){.advanced-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.member-tools-grid,.admin-grid{grid-template-columns:1fr}.admin-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:520px){.advanced-filters{grid-template-columns:1fr}.profile-secondary-actions .btn{flex:1 1 42%}.admin-stats{grid-template-columns:1fr}.tool-panel{padding:13px}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body>
@@ -47,7 +72,17 @@
 <main>
 <section class="hero" id="home"><div class="wrap hero-grid"><div><div class="eyebrow">✨ भरोसे और सम्मान के साथ</div><h1>आपके नए जीवन की <span>शुरुआत</span><br>यहाँ से ❤️</h1><p>अपने समुदाय में उपयुक्त जीवनसाथी खोजने का एक सरल मंच। अपनी पसंद, परिवार और भविष्य के सपनों के अनुरूप परिचय तलाशें।</p><div class="actions"><a class="btn primary" href="#account">अपनी प्रोफाइल बनाएँ →</a><a class="btn outline" href="#search">जीवनसाथी खोजें</a></div><div class="trust"><span>✓ सरल प्रोफाइल</span><span>✓ पसंद के अनुसार खोज</span><span>✓ गोपनीयता का ध्यान</span></div></div><div class="art"><div class="heart">💑</div><div class="float one">🌸 सम्मान और अपनापन</div><div class="float two">💖 साथ जीवनभर का</div></div></div></section>
 <section class="section" id="about"><div class="wrap"><div class="head"><div class="kicker">हमारा उद्देश्य</div><h2>एक मंच, रिश्तों की नई शुरुआत</h2><p>कश्यप, मांझी और निषाद समुदाय के लोगों और परिवारों को वैवाहिक परिचय के लिए जोड़ने की पहल।</p></div><div class="features"><article class="feature"><div class="feature-icon">👤</div><h3>वैवाहिक परिचय</h3><p>अपनी जानकारी और पसंद के साथ परिचय तैयार करें।</p></article><article class="feature"><div class="feature-icon">🔎</div><h3>आसान खोज</h3><p>उम्र, राज्य, जिला और समुदाय के अनुसार प्रोफाइल छाँटें।</p></article><article class="feature"><div class="feature-icon">🛡️</div><h3>सुरक्षित संपर्क</h3><p>निजी जानकारी साझा करने से पहले सोच-समझकर निर्णय लें।</p></article></div></div></section>
-<section class="section pale" id="search"><div class="wrap"><div class="head"><div class="kicker">आपकी पसंद, आपकी खोज</div><h2>जीवनसाथी खोजें 💑</h2><p>सार्वजनिक सदस्य प्रोफाइल यहाँ दिखेंगी। यदि अभी कोई प्रकाशित प्रोफाइल नहीं है, तो उदाहरण प्रोफाइल दिखाई देंगी।</p></div><div class="searchbox"><div class="filters"><div class="field"><label for="lookingFor">आप किसके लिए खोज रहे हैं?</label><select id="lookingFor"><option value="">सभी प्रोफाइल</option><option>दुल्हन</option><option>दूल्हा</option></select></div><div class="field"><label for="community">समुदाय</label><select id="community"><option value="">सभी समुदाय</option><option>कश्यप</option><option>मांझी</option><option>निषाद</option></select></div><div class="field"><label for="stateFilter">राज्य</label><select id="stateFilter"><option value="">सभी राज्य</option><option>उत्तर प्रदेश</option><option>दिल्ली</option><option>बिहार</option><option>मध्य प्रदेश</option><option>अन्य</option></select></div><div class="field"><label for="ageFilter">अधिकतम उम्र</label><select id="ageFilter"><option value="">कोई सीमा नहीं</option><option value="25">25 वर्ष</option><option value="30">30 वर्ष</option><option value="35">35 वर्ष</option><option value="40">40 वर्ष</option></select></div></div><div class="search-actions"><button class="btn primary" id="searchBtn">🔎 रिश्ते खोजें</button><button class="btn outline" id="resetBtn">फ़िल्टर हटाएँ</button><span class="count" id="count">लोड हो रहा है…</span></div></div></div></section>
+<section class="section pale" id="search"><div class="wrap"><div class="head"><div class="kicker">आपकी पसंद, आपकी खोज</div><h2>जीवनसाथी खोजें 💑</h2><p>सार्वजनिक सदस्य प्रोफाइल यहाँ दिखेंगी। यदि अभी कोई प्रकाशित प्रोफाइल नहीं है, तो उदाहरण प्रोफाइल दिखाई देंगी।</p></div><div class="searchbox"><div class="filters advanced-filters">
+<div class="field"><label for="lookingFor">आप किसके लिए खोज रहे हैं?</label><select id="lookingFor"><option value="">सभी प्रोफाइल</option><option>दुल्हन</option><option>दूल्हा</option></select></div>
+<div class="field"><label for="community">समुदाय</label><select id="community"><option value="">सभी समुदाय</option><option>कश्यप</option><option>मांझी</option><option>निषाद</option></select></div>
+<div class="field"><label for="stateFilter">राज्य</label><select id="stateFilter"><option value="">सभी राज्य</option><option>उत्तर प्रदेश</option><option>दिल्ली</option><option>बिहार</option><option>मध्य प्रदेश</option><option>अन्य</option></select></div>
+<div class="field"><label for="minAgeFilter">न्यूनतम उम्र</label><select id="minAgeFilter"><option value="">कोई सीमा नहीं</option><option value="18">18 वर्ष</option><option value="21">21 वर्ष</option><option value="25">25 वर्ष</option><option value="28">28 वर्ष</option><option value="30">30 वर्ष</option><option value="35">35 वर्ष</option><option value="40">40 वर्ष</option></select></div>
+<div class="field"><label for="ageFilter">अधिकतम उम्र</label><select id="ageFilter"><option value="">कोई सीमा नहीं</option><option value="25">25 वर्ष</option><option value="30">30 वर्ष</option><option value="35">35 वर्ष</option><option value="40">40 वर्ष</option><option value="45">45 वर्ष</option><option value="50">50 वर्ष</option><option value="60">60 वर्ष</option></select></div>
+<div class="field"><label for="districtFilter">जिला</label><input id="districtFilter" type="search" maxlength="80" placeholder="जैसे मेरठ, आगरा"></div>
+<div class="field"><label for="educationFilter">शिक्षा</label><input id="educationFilter" type="search" maxlength="100" placeholder="जैसे स्नातक"></div>
+<div class="field"><label for="occupationFilter">व्यवसाय</label><input id="occupationFilter" type="search" maxlength="100" placeholder="जैसे निजी नौकरी"></div>
+<div class="field"><label for="sortProfiles">क्रम</label><select id="sortProfiles"><option value="newest">नए पहले</option><option value="age-asc">कम उम्र पहले</option><option value="age-desc">अधिक उम्र पहले</option></select></div>
+</div><div class="search-actions"><button class="btn primary" id="searchBtn">🔎 रिश्ते खोजें</button><button class="btn outline" id="resetBtn">फ़िल्टर हटाएँ</button><span class="count" id="count">लोड हो रहा है…</span></div><div id="searchStatus" class="status" role="status" aria-live="polite"></div></div></div></section>
 <section class="section" id="profiles"><div class="wrap"><div class="head"><div class="kicker">परिचय</div><h2>सदस्य प्रोफाइल</h2><p id="profileIntro">सार्वजनिक किए गए सदस्य परिचय यहाँ दिखाई देंगे।</p></div><div class="profiles" id="profilesGrid"></div><div class="notice" id="demoNotice">नमूना प्रोफाइलें केवल वेबसाइट का लेआउट दिखाती हैं; ये वास्तविक सदस्य नहीं हैं।</div></div></section>
 <section class="section pale" id="account"><div class="wrap"><div class="head"><div class="kicker">सदस्य क्षेत्र</div><h2>लॉगिन और रजिस्ट्रेशन 🔐</h2><p>पहले ईमेल से अकाउंट बनाएँ या मौजूदा अकाउंट में लॉगिन करें। प्रोफाइल सेव करने के लिए लॉगिन आवश्यक है।</p></div><div class="authgrid"><aside class="aside"><div style="font-size:38px">💍</div><h3>आपकी कहानी, आपका परिचय</h3><p>अकाउंट बनने के बाद अपनी वैवाहिक प्रोफाइल सेव कर सकते हैं और चाहें तो उसे सार्वजनिक कर सकते हैं।</p><ul><li>मान्य ईमेल का उपयोग करें</li><li>मजबूत पासवर्ड रखें</li><li>सार्वजनिक करने से पहले प्रोफाइल जाँचें</li><li>पासवर्ड या OTP किसी से साझा न करें</li></ul></aside><div class="panel">
 <div id="signedOut"><h3>ईमेल से अकाउंट बनाएँ / लॉगिन करें</h3><p class="sub">नए अकाउंट पर ईमेल पुष्टि माँगी जा सकती है।</p><form id="authForm"><div class="authfields"><div class="field full"><label for="email">ईमेल पता</label><input id="email" type="email" autocomplete="email" required placeholder="name@example.com"></div><div class="field full"><label for="password">पासवर्ड</label><input id="password" type="password" autocomplete="current-password" minlength="8" required placeholder="कम से कम 8 अक्षर"></div></div><div class="actions2"><button type="button" class="btn primary" id="signupBtn">ईमेल से अकाउंट बनाएँ</button><button type="submit" class="btn outline" id="loginBtn">लॉगिन</button></div></form><div id="authStatus" class="status" role="status" aria-live="polite"></div></div>
@@ -80,6 +115,21 @@
   <p id="liveChatState" class="small-muted" aria-live="polite">लाइव चैट कनेक्शन शुरू हो रहा है…</p>
 </div>
 
+<div class="feature-manager" id="memberSafetyManager">
+  <div class="interest-heading"><div><h3>मेरी सुरक्षा और पसंदीदा ❤️</h3><p class="sub">ब्लॉक किए गए सदस्य यहाँ देखें या हटाएँ। पसंदीदा प्रोफाइल बाद में फिर देख सकेंगे।</p></div><button class="btn outline" type="button" id="refreshMemberToolsBtn">रिफ्रेश करें</button></div>
+  <div class="member-tools-grid">
+    <section class="tool-panel"><h4>पसंदीदा प्रोफाइल <span id="favoritesCount" class="small-muted">(0)</span></h4><div id="favoritesList" class="tool-list"><div class="empty">लॉगिन के बाद पसंदीदा प्रोफाइल यहाँ आएँगी।</div></div><div id="favoritesStatus" class="status" role="status" aria-live="polite"></div></section>
+    <section class="tool-panel"><h4>ब्लॉक किए गए सदस्य <span id="blockedCount" class="small-muted">(0)</span></h4><div id="blockedList" class="tool-list"><div class="empty">अभी कोई सदस्य ब्लॉक नहीं किया गया है।</div></div><div id="blockStatus" class="status" role="status" aria-live="polite"></div></section>
+  </div>
+</div>
+
+<div class="admin-manager hidden" id="adminManager">
+  <div class="interest-heading"><div><h3>व्यवस्थापक पैनल 🛡️</h3><p class="sub">सिर्फ अधिकृत एडमिन को शिकायतें और प्रोफाइल मॉडरेशन दिखेगा।</p></div><button class="btn outline" type="button" id="refreshAdminBtn">डेटा रिफ्रेश करें</button></div>
+  <div id="adminStatus" class="status" role="status" aria-live="polite"></div>
+  <div class="admin-stats" id="adminStats"></div>
+  <div class="admin-grid"><section class="tool-panel"><h4>सदस्यों की रिपोर्ट</h4><div id="adminReportsList" class="tool-list"><div class="empty">रिपोर्ट लोड हो रही हैं…</div></div></section><section class="tool-panel"><h4>प्रोफाइल मॉडरेशन</h4><p class="small-muted">छिपी/दिख रही प्रोफाइल देखें। छिपाई गई प्रोफाइल सदस्य खुद से दोबारा प्रकाशित नहीं कर सकेगा।</p><div id="adminProfilesList" class="tool-list"><div class="empty">प्रोफाइल लोड हो रही हैं…</div></div></section></div>
+</div>
+
 <div class="danger-zone" id="deleteAccountZone">
   <h3>⚠️ मेरा अकाउंट और प्रोफाइल हमेशा के लिए हटाएँ</h3>
   <p>इससे आपकी प्रोफाइल, रुचि अनुरोध, चैट संदेश और Supabase में आपकी प्रोफाइल फोटो फ़ाइलें हट जाएँगी। यह कार्रवाई वापस नहीं की जा सकती।</p>
@@ -102,6 +152,7 @@
 
 </div></div></div><div class="notice">अपनी प्रोफाइल में फोन नंबर, घर का पूरा पता, पहचान पत्र या अन्य अति-निजी जानकारी न लिखें। सार्वजनिक प्रोफाइल सभी आगंतुकों को दिखाई दे सकती है।</div></div></section>
 </main><footer class="footer"><div class="wrap"><div class="footgrid"><div><h3>💍 कश्यप वैवाहिक मंच</h3><p>रिश्ते अपनों से, साथ जीवनभर का। कश्यप, मांझी और निषाद समुदाय के लिए वैवाहिक परिचय मंच।</p></div><div><h4>त्वरित लिंक</h4><a href="#about">हमारे बारे में</a><a href="#search">रिश्ता खोजें</a><a href="#account">लॉगिन / रजिस्ट्रेशन</a></div><div><h4>सुरक्षा</h4><p>अपना पासवर्ड, OTP, बैंक जानकारी या निजी दस्तावेज़ किसी से साझा न करें।</p></div></div><div class="copyright"><span>© 2026 कश्यप वैवाहिक मंच</span><span>सदस्य जानकारी का उपयोग सोच-समझकर करें।</span></div></div></footer>
+<div class="modal" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle"><div class="modalbox"><button class="close" type="button" id="reportModalClose" aria-label="बंद करें">✕</button><h3 id="reportModalTitle">प्रोफाइल रिपोर्ट करें</h3><p id="reportTargetLabel" class="sub">रिपोर्ट की जा रही प्रोफाइल</p><form id="reportForm"><div class="field"><label for="reportReason">रिपोर्ट का कारण *</label><select id="reportReason" required><option value="">कारण चुनें</option><option value="fake_profile">फर्जी प्रोफाइल / गलत जानकारी</option><option value="harassment">परेशान करना / अनुचित संदेश</option><option value="inappropriate_content">अनुचित फोटो या सामग्री</option><option value="scam">धोखाधड़ी / पैसे माँगना</option><option value="other">अन्य</option></select></div><div class="field" style="margin-top:12px"><label for="reportDetails">विवरण (वैकल्पिक)</label><textarea id="reportDetails" maxlength="1000" rows="4" placeholder="समस्या के बारे में तथ्यात्मक जानकारी दें"></textarea></div><div class="actions2" style="margin-top:14px"><button class="btn primary" type="submit" id="submitReportBtn">रिपोर्ट भेजें</button><button class="btn outline" type="button" id="cancelReportBtn">रद्द करें</button></div><div id="reportStatus" class="status" role="status" aria-live="polite"></div></form></div></div>
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modalbox"><button class="close" id="modalClose" aria-label="बंद करें">✕</button><h3 id="modalTitle">प्रोफाइल परिचय</h3><p id="modalText"></p><div class="notice" id="modalNote"></div><button class="btn primary" id="modalOkay">ठीक है</button></div></div>
 <div id="messageToast" class="message-toast hidden" role="status" aria-live="polite" tabindex="0"><strong id="messageToastTitle">नया संदेश</strong><span id="messageToastBody"></span><button type="button" id="messageToastClose" aria-label="सूचना बंद करें">✕</button></div>
 <script>
@@ -118,6 +169,10 @@ const demos=[
 {id:"d5",display_name:"डेमो प्रोफाइल 05",gender:"दुल्हन",age:27,community:"मांझी",state:"मध्य प्रदेश",district:"भोपाल",education:"स्नातक",occupation:"निजी नौकरी",emoji:"👩🏻‍🦱",demo:true},
 {id:"d6",display_name:"डेमो प्रोफाइल 06",gender:"दूल्हा",age:26,community:"निषाद",state:"उत्तर प्रदेश",district:"लखनऊ",education:"स्नातक",occupation:"तकनीकी कार्य",emoji:"👨🏻‍🦱",demo:true}];
 let allProfiles=[...demos],user=null;
+const favoriteIds=new Set();
+const blockedIds=new Set();
+let isAdminUser=false;
+let reportTarget=null;
 let currentPhotoPath=null, pendingPhotoPath=null;
 let activeChat=null;
 let chatConversations=[];
@@ -138,21 +193,155 @@ function renderProfiles(items){
   const card=document.createElement("article");card.className="profile";
   const top=document.createElement("div");top.className="ptop";
   const av=document.createElement("div");av.className="avatar";
-  if(p.photo_url&&!p.demo){const im=document.createElement("img");im.src=p.photo_url;im.alt="प्रोफाइल फोटो";im.loading="lazy";im.onerror=()=>{av.textContent=p.gender==="दुल्हन"?"👩":"👨"};av.append(im)}else av.textContent=p.emoji||(p.gender==="दुल्हन"?"👩":"👨");
+  if(p.photo_url&&!p.demo){const im=document.createElement("img");im.src=p.photo_url;im.alt="प्रोफाइल फोटो";im.loading="lazy";im.referrerPolicy="no-referrer";im.onerror=()=>{av.textContent=p.gender==="दुल्हन"?"👩":"👨"};av.append(im)}else av.textContent=p.emoji||(p.gender==="दुल्हन"?"👩":"👨");
   const who=document.createElement("div"),h=document.createElement("h3"),sub=document.createElement("p"),tag=document.createElement("span");h.textContent=p.display_name||"सदस्य प्रोफाइल";sub.textContent=`${p.gender} • ${p.age} वर्ष`;tag.className="tag"+(p.demo?"":" real");tag.textContent=p.demo?"डेमो • वास्तविक सदस्य नहीं":"सदस्य प्रोफाइल";who.append(h,sub,tag);top.append(av,who);
   const body=document.createElement("div");body.className="pbody";const det=document.createElement("div");det.className="details";
   [["समुदाय",p.community],["शिक्षा",p.education],["स्थान",[p.district,p.state].filter(Boolean).join(", ")],["व्यवसाय",p.occupation]].forEach(([label,value])=>{const x=document.createElement("span");x.textContent=label;const b=document.createElement("b");b.textContent=value||"—";x.append(b);det.append(x)});body.append(det);
   if(p.bio){const bio=document.createElement("p");bio.style.cssText="font-size:13px;color:#65575d;margin:13px 0 0;overflow-wrap:anywhere";bio.textContent=p.bio;body.append(bio)}
-  const foot=document.createElement("div");foot.className="pfoot";const v=document.createElement("button");v.className="btn outline";v.textContent="परिचय देखें";v.onclick=()=>showProfile(p);
-  const r=document.createElement("button");r.className="btn primary";
+  const foot=document.createElement("div");foot.className="pfoot";const v=document.createElement("button");v.className="btn outline";v.type="button";v.textContent="परिचय देखें";v.onclick=()=>showProfile(p);
+  const r=document.createElement("button");r.className="btn primary";r.type="button";
   if(!p.demo&&user&&p.id===user.id){r.textContent="आपकी प्रोफाइल";r.disabled=true}else{r.textContent="रुचि दिखाएँ";r.onclick=()=>sendInterest(p)}
-  foot.append(v,r);card.append(top,body,foot);grid.append(card);
+  foot.append(v,r);card.append(top,body,foot);
+  if(!p.demo&&(!user||p.id!==user.id)){
+   const actions=document.createElement("div");actions.className="profile-secondary-actions";
+   const fav=document.createElement("button");fav.type="button";fav.className="btn outline tiny";fav.textContent=favoriteIds.has(p.id)?"★ पसंदीदा से हटाएँ":"☆ पसंदीदा";fav.onclick=()=>toggleFavorite(p);
+   const block=document.createElement("button");block.type="button";block.className="btn outline tiny";block.textContent=blockedIds.has(p.id)?"ब्लॉक किया गया":"🚫 ब्लॉक";block.disabled=blockedIds.has(p.id);block.onclick=()=>blockProfile(p);
+   const report=document.createElement("button");report.type="button";report.className="btn outline tiny";report.textContent="⚑ रिपोर्ट";report.onclick=()=>openReportModal(p);
+   actions.append(fav,block,report);card.append(actions);
+  }
+  grid.append(card);
  });
 }
 function showProfile(p,note="यहाँ केवल प्रकाशित वैवाहिक जानकारी दिखाई जाती है।"){$("modalTitle").textContent=p.display_name||"प्रोफाइल";$ ("modalText").textContent=`${p.gender} • ${p.age} वर्ष। समुदाय: ${p.community}। स्थान: ${[p.district,p.state].filter(Boolean).join(", ")||"उपलब्ध नहीं"}। शिक्षा: ${p.education||"—"}। व्यवसाय: ${p.occupation||"—"}।`;$ ("modalNote").textContent=note;$ ("modal").classList.add("open")}
-function applyFilters(){const g=$("lookingFor").value,c=$("community").value,s=$("stateFilter").value,a=$("ageFilter").value;renderProfiles(allProfiles.filter(p=>(!g||p.gender===g)&&(!c||p.community===c)&&(!s||p.state===s)&&(!a||Number(p.age)<=Number(a))))}
-$("searchBtn").onclick=applyFilters;$("resetBtn").onclick=()=>{["lookingFor","community","stateFilter","ageFilter"].forEach(id=>$(id).value="");applyFilters()};$("modalClose").onclick=$("modalOkay").onclick=()=>$("modal").classList.remove("open");$("modal").onclick=e=>{if(e.target===$("modal"))$("modal").classList.remove("open")};document.addEventListener("keydown",e=>{if(e.key==="Escape")$("modal").classList.remove("open")});$("menuBtn").onclick=()=>$("navlinks").classList.toggle("open");document.querySelectorAll("#navlinks a").forEach(a=>a.onclick=()=>$("navlinks").classList.remove("open"));
+function applyFilters(){
+ const g=$("lookingFor").value,c=$("community").value,s=$("stateFilter").value,minAge=$("minAgeFilter").value,maxAge=$("ageFilter").value;
+ const district=($("districtFilter").value||"").trim().toLocaleLowerCase(),education=($("educationFilter").value||"").trim().toLocaleLowerCase(),occupation=($("occupationFilter").value||"").trim().toLocaleLowerCase(),sort=$("sortProfiles").value;
+ let items=allProfiles.filter(p=>{
+  if(user&&p.id===user.id)return false;
+  if(user&&blockedIds.has(p.id))return false;
+  const stateOk=!s||(s==="अन्य"?!["उत्तर प्रदेश","दिल्ली","बिहार","मध्य प्रदेश"].includes(String(p.state||"")):String(p.state||"").toLocaleLowerCase().includes(s.toLocaleLowerCase()));
+  return (!g||p.gender===g)&&(!c||p.community===c)&&stateOk&&(!minAge||Number(p.age)>=Number(minAge))&&(!maxAge||Number(p.age)<=Number(maxAge))&&(!district||String(p.district||"").toLocaleLowerCase().includes(district))&&(!education||String(p.education||"").toLocaleLowerCase().includes(education))&&(!occupation||String(p.occupation||"").toLocaleLowerCase().includes(occupation));
+ });
+ if(sort==="age-asc")items.sort((a,b)=>Number(a.age)-Number(b.age));else if(sort==="age-desc")items.sort((a,b)=>Number(b.age)-Number(a.age));else items.sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")));
+ if(minAge&&maxAge&&Number(minAge)>Number(maxAge)){renderProfiles([]);status("searchStatus","न्यूनतम उम्र अधिकतम उम्र से बड़ी है। उम्र की सीमा सही करें।","error");return}
+ clearStatus("searchStatus");renderProfiles(items);
+}
+$("searchBtn").onclick=applyFilters;$("resetBtn").onclick=()=>{["lookingFor","community","stateFilter","minAgeFilter","ageFilter","districtFilter","educationFilter","occupationFilter"].forEach(id=>$(id).value="");$("sortProfiles").value="newest";applyFilters()};
+for(const id of ["lookingFor","community","stateFilter","minAgeFilter","ageFilter","districtFilter","educationFilter","occupationFilter","sortProfiles"]){$(id).addEventListener("change",applyFilters);$(id).addEventListener("input",applyFilters)}$("modalClose").onclick=$("modalOkay").onclick=()=>$("modal").classList.remove("open");$("modal").onclick=e=>{if(e.target===$("modal"))$("modal").classList.remove("open")};document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("modal").classList.remove("open");closeReportModal()}});$("menuBtn").onclick=()=>$("navlinks").classList.toggle("open");document.querySelectorAll("#navlinks a").forEach(a=>a.onclick=()=>$("navlinks").classList.remove("open"));
 async function loadPublic(){if(!sb){allProfiles=[...demos];$("profileIntro").textContent="Supabase लाइब्रेरी लोड नहीं हुई; अभी डेमो प्रोफाइल दिखाई जा रही हैं।";applyFilters();return}const {data,error}=await sb.from("profiles").select("id,display_name,gender,age,community,state,district,education,occupation,bio,photo_url,is_published,created_at").eq("is_published",true).order("created_at",{ascending:false});if(error){console.error(error);allProfiles=[...demos];$("profileIntro").textContent="सदस्य प्रोफाइल अभी लोड नहीं हुईं; नमूना प्रोफाइल दिखाई जा रही हैं।";$("demoNotice").classList.remove("hidden")}else if(data&&data.length){allProfiles=data.map(p=>({...p,demo:false}));$("profileIntro").textContent="सदस्यों द्वारा सार्वजनिक करने के लिए चुनी गई प्रोफाइलें।";$("demoNotice").classList.add("hidden")}else{allProfiles=[...demos];$("profileIntro").textContent="अभी कोई प्रकाशित सदस्य प्रोफाइल नहीं है; नीचे केवल उदाहरण प्रोफाइलें हैं।";$("demoNotice").classList.remove("hidden")}applyFilters()}
+const REPORT_REASON_LABELS={fake_profile:"फर्जी प्रोफाइल / गलत जानकारी",harassment:"परेशान करना / अनुचित संदेश",inappropriate_content:"अनुचित फोटो या सामग्री",scam:"धोखाधड़ी / पैसे माँगना",other:"अन्य"};
+function profileDisplay(p,id){return p?.display_name||`सदस्य (${String(id||"").slice(0,8)}…)`}
+async function toggleFavorite(p){
+ if(!user){status("authStatus","पसंदीदा में रखने के लिए पहले लॉगिन करें।","info");$("account").scrollIntoView({behavior:"smooth",block:"start"});return}
+ if(p.demo||p.id===user.id)return;
+ try{
+  if(favoriteIds.has(p.id)){const {error}=await sb.from("favorites").delete().eq("user_id",user.id).eq("profile_id",p.id);if(error)throw error;favoriteIds.delete(p.id);status("favoritesStatus","प्रोफाइल पसंदीदा सूची से हटा दी गई।","success")}
+  else{const {error}=await sb.from("favorites").insert({user_id:user.id,profile_id:p.id});if(error)throw error;favoriteIds.add(p.id);status("favoritesStatus","प्रोफाइल पसंदीदा सूची में जोड़ दी गई।","success")}
+  applyFilters();await loadFavorites();
+ }catch(e){console.error(e);status("favoritesStatus","पसंदीदा अपडेट नहीं हो सकी: "+e.message+"। पहले पसंदीदा/ब्लॉक SQL सेटअप चलाएँ।","error")}
+}
+async function loadFavorites(){
+ if(!sb||!user)return;
+ const box=$("favoritesList");box.innerHTML='<div class="empty">पसंदीदा लोड हो रही हैं…</div>';
+ try{
+  const {data:rows,error}=await sb.from("favorites").select("profile_id,created_at").eq("user_id",user.id).order("created_at",{ascending:false});if(error)throw error;
+  favoriteIds.clear();(rows||[]).forEach(r=>favoriteIds.add(r.profile_id));
+  if(!rows||!rows.length){$("favoritesCount").textContent="(0)";box.innerHTML='<div class="empty">अभी कोई पसंदीदा प्रोफाइल नहीं है। रिश्ता खोजें में ☆ पसंदीदा दबाएँ।</div>';applyFilters();return}
+  const ids=rows.map(r=>r.profile_id);const {data:people,error:peopleError}=await sb.from("profiles").select("id,display_name,gender,age,community,state,district,education,occupation,is_published").in("id",ids);if(peopleError)throw peopleError;
+  const map=new Map((people||[]).map(p=>[p.id,p]));const items=rows.map(r=>map.get(r.profile_id)).filter(p=>p&&p.is_published&&!blockedIds.has(p.id));
+  $("favoritesCount").textContent=`(${items.length})`;box.replaceChildren();
+  if(!items.length){box.innerHTML='<div class="empty">आपकी पसंदीदा सूची में अभी दिखाई जा सकने वाली प्रोफाइल नहीं है। कुछ प्रोफाइल छिपाई गई हो सकती हैं या ब्लॉक की गई होंगी।</div>';applyFilters();return}
+  items.forEach(p=>{const item=document.createElement("div");item.className="tool-item";const name=document.createElement("strong");name.textContent=p.display_name||"सदस्य";const meta=document.createElement("div");meta.className="meta";meta.textContent=[p.gender,p.age?`${p.age} वर्ष`:null,p.community,[p.district,p.state].filter(Boolean).join(", ")].filter(Boolean).join(" • ");const actions=document.createElement("div");actions.className="tool-item-actions";const view=document.createElement("button");view.className="btn outline";view.type="button";view.textContent="परिचय देखें";view.onclick=()=>{const full=allProfiles.find(x=>x.id===p.id)||p;showProfile(full)};const remove=document.createElement("button");remove.className="btn outline";remove.type="button";remove.textContent="★ पसंदीदा से हटाएँ";remove.onclick=()=>toggleFavorite(p);actions.append(view,remove);item.append(name,meta,actions);box.append(item)});
+  applyFilters();
+ }catch(e){console.error(e);box.innerHTML='<div class="empty">पसंदीदा प्रोफाइल लोड नहीं हो सकीं। SQL/RLS सेटअप जाँचें।</div>';status("favoritesStatus","पसंदीदा लोड नहीं हुईं: "+e.message,"error")}
+}
+async function loadMyBlocks(){
+ if(!sb||!user)return;
+ const box=$("blockedList");box.innerHTML='<div class="empty">ब्लॉक सूची लोड हो रही है…</div>';
+ try{
+  const {data:rows,error}=await sb.from("blocks").select("blocked_id,blocked_display_name,created_at").eq("blocker_id",user.id).order("created_at",{ascending:false});if(error)throw error;
+  blockedIds.clear();(rows||[]).forEach(r=>blockedIds.add(r.blocked_id));$("blockedCount").textContent=`(${blockedIds.size})`;box.replaceChildren();
+  if(!rows||!rows.length){box.innerHTML='<div class="empty">अभी कोई सदस्य ब्लॉक नहीं किया गया है।</div>';applyFilters();return}
+  let pMap=new Map();const ids=rows.map(r=>r.blocked_id);const {data:people}=await sb.from("profiles").select("id,display_name,gender,age,community,state,district").in("id",ids);if(people)pMap=new Map(people.map(p=>[p.id,p]));
+  rows.forEach(row=>{const p=pMap.get(row.blocked_id);const item=document.createElement("div");item.className="tool-item";const name=document.createElement("strong");name.textContent=p?.display_name||row.blocked_display_name||profileDisplay(p,row.blocked_id);const meta=document.createElement("div");meta.className="meta";meta.textContent="ब्लॉक किया गया सदस्य — यह सदस्य आपकी खोज में छिपा रहेगा और आपस में नए रुचि/संदेश अनुरोध रोके जाएँगे।";const actions=document.createElement("div");actions.className="tool-item-actions";const unblock=document.createElement("button");unblock.className="btn outline";unblock.type="button";unblock.textContent="अनब्लॉक करें";unblock.onclick=()=>unblockMember(row.blocked_id);actions.append(unblock);item.append(name,meta,actions);box.append(item)});
+  applyFilters();
+ }catch(e){console.error(e);box.innerHTML='<div class="empty">ब्लॉक सूची लोड नहीं हुई।</div>';status("blockStatus","ब्लॉक सूची लोड नहीं हुई: "+e.message,"error")}
+}
+async function blockProfile(p){
+ if(!user){status("authStatus","सदस्य को ब्लॉक करने के लिए पहले लॉगिन करें।","info");$("account").scrollIntoView({behavior:"smooth",block:"start"});return}
+ if(p.demo||p.id===user.id)return;
+ if(blockedIds.has(p.id)){status("blockStatus","यह सदस्य पहले से ब्लॉक है।","info");return}
+ const ok=window.confirm(`${p.display_name||"यह सदस्य"} को ब्लॉक करें? यह प्रोफाइल आपकी खोज से छिपेगी और इस जोड़ी के नए रुचि/चैट संदेश रोके जाएँगे।`);if(!ok)return;
+ try{const {error}=await sb.from("blocks").insert({blocker_id:user.id,blocked_id:p.id,blocked_display_name:p.display_name||null});if(error)throw error;blockedIds.add(p.id);status("blockStatus","सदस्य ब्लॉक कर दिया गया है।","success");await Promise.all([loadMyBlocks(),loadMyInterests(),loadChatConversations()]);applyFilters()}
+ catch(e){console.error(e);status("blockStatus","सदस्य ब्लॉक नहीं हुआ: "+e.message+"। Safety SQL setup और RLS जाँचें।","error")}
+}
+async function unblockMember(id){
+ if(!user)return;const ok=window.confirm("क्या इस सदस्य को अनब्लॉक करना चाहते हैं?");if(!ok)return;
+ try{const {error}=await sb.from("blocks").delete().eq("blocker_id",user.id).eq("blocked_id",id);if(error)throw error;blockedIds.delete(id);status("blockStatus","सदस्य अनब्लॉक कर दिया गया है।","success");await loadMyBlocks();applyFilters()}
+ catch(e){console.error(e);status("blockStatus","अनब्लॉक नहीं हो सका: "+e.message,"error")}
+}
+function openReportModal(p){
+ if(!user){status("authStatus","रिपोर्ट भेजने के लिए पहले लॉगिन करें।","info");$("account").scrollIntoView({behavior:"smooth",block:"start"});return}
+ if(p.demo||p.id===user.id)return;
+ reportTarget=p;$ ("reportTargetLabel").textContent=`रिपोर्ट की जा रही प्रोफाइल: ${p.display_name||"सदस्य"}`;$ ("reportReason").value="";$ ("reportDetails").value="";clearStatus("reportStatus");$("reportModal").classList.add("open");$("reportReason").focus();
+}
+function closeReportModal(){$("reportModal").classList.remove("open");reportTarget=null}
+$("reportModalClose").addEventListener("click",closeReportModal);$("cancelReportBtn").addEventListener("click",closeReportModal);$("reportModal").addEventListener("click",e=>{if(e.target===$("reportModal"))closeReportModal()});
+$("reportForm").addEventListener("submit",async e=>{
+ e.preventDefault();if(!user||!reportTarget){status("reportStatus","रिपोर्ट भेजने के लिए लॉगिन करें और एक वास्तविक प्रोफाइल चुनें।","error");return}
+ const reason=$("reportReason").value,details=$("reportDetails").value.trim();if(!reason){status("reportStatus","रिपोर्ट का कारण चुनें।","error");return}if(details.length>1000){status("reportStatus","विवरण 1000 अक्षरों से कम रखें।","error");return}
+ $("submitReportBtn").disabled=true;
+ try{const {error}=await sb.from("reports").insert({reporter_id:user.id,reported_user_id:reportTarget.id,reason,details:details||null,status:"open"});if(error)throw error;status("reportStatus","रिपोर्ट भेज दी गई है। व्यवस्थापक इसकी समीक्षा करेगा।","success");setTimeout(closeReportModal,900)}
+ catch(err){console.error(err);status("reportStatus",err.code==="23505"?"आपकी इस सदस्य के बारे में एक खुली रिपोर्ट पहले से मौजूद है।":"रिपोर्ट नहीं भेजी जा सकी: "+err.message+"। Safety SQL setup जाँचें।","error")}
+ finally{$("submitReportBtn").disabled=false}
+});
+$("refreshMemberToolsBtn").addEventListener("click",()=>Promise.all([loadFavorites(),loadMyBlocks()]));
+
+async function checkAdminRole(){
+ if(!sb||!user){isAdminUser=false;$("adminManager").classList.add("hidden");return}
+ try{const {data,error}=await sb.from("admin_users").select("user_id").eq("user_id",user.id).maybeSingle();if(error)throw error;isAdminUser=!!data;$("adminManager").classList.toggle("hidden",!isAdminUser);if(isAdminUser)await loadAdminDashboard()}
+ catch(e){console.error("Admin check failed",e);isAdminUser=false;$("adminManager").classList.add("hidden")}
+}
+function adminReportStatusLabel(s){return ({open:"नई रिपोर्ट",reviewed:"समीक्षा हुई",actioned:"कार्रवाई हुई",dismissed:"खारिज"})[s]||s}
+async function loadAdminDashboard(){
+ if(!isAdminUser||!user)return;
+ clearStatus("adminStatus");$("adminReportsList").innerHTML='<div class="empty">रिपोर्ट लोड हो रही हैं…</div>';$("adminProfilesList").innerHTML='<div class="empty">प्रोफाइल लोड हो रही हैं…</div>';
+ try{
+  const [rRes,pRes]=await Promise.all([
+    sb.from("reports").select("id,reporter_id,reported_user_id,reason,details,status,admin_note,created_at").order("created_at",{ascending:false}).limit(100),
+    sb.from("profiles").select("id,display_name,gender,age,community,state,district,is_published,is_moderated_hidden,created_at").order("created_at",{ascending:false}).limit(100)
+  ]);
+  if(rRes.error)throw rRes.error;if(pRes.error)throw pRes.error;
+  const reports=rRes.data||[],profiles=pRes.data||[];const openCount=reports.filter(r=>r.status==="open").length;const pubCount=profiles.filter(p=>p.is_published&&!p.is_moderated_hidden).length;
+  $("adminStats").innerHTML="";[[profiles.length,"लोड की गई प्रोफाइल"],[pubCount,"प्रकाशित प्रोफाइल"],[openCount,"खुली रिपोर्ट"]].forEach(([n,label])=>{const box=document.createElement("div");box.className="admin-stat";const num=document.createElement("span");num.className="num";num.textContent=String(n);const l=document.createElement("span");l.className="label";l.textContent=label;box.append(num,l);$("adminStats").append(box)});
+  const ids=[...new Set(reports.flatMap(r=>[r.reporter_id,r.reported_user_id]))];const map=new Map(profiles.map(p=>[p.id,p]));const missing=ids.filter(id=>!map.has(id));if(missing.length){const {data:extra}=await sb.from("profiles").select("id,display_name,gender,age,community,state,district,is_published,is_moderated_hidden").in("id",missing);(extra||[]).forEach(p=>map.set(p.id,p))}
+  renderAdminReports(reports,map);renderAdminProfiles(profiles);
+ }catch(e){console.error(e);status("adminStatus","एडमिन डेटा लोड नहीं हुआ: "+e.message+"। admin_users, reports और admin RLS setup जाँचें।","error")}
+}
+function renderAdminReports(reports,profileMap){
+ const box=$("adminReportsList");box.replaceChildren();if(!reports.length){box.innerHTML='<div class="empty">अभी कोई रिपोर्ट नहीं है।</div>';return}
+ reports.forEach(r=>{const item=document.createElement("div");item.className="tool-item";const target=document.createElement("strong");target.textContent="रिपोर्टेड सदस्य: "+profileDisplay(profileMap.get(r.reported_user_id),r.reported_user_id);const reporter=document.createElement("div");reporter.className="meta";reporter.textContent="रिपोर्ट भेजने वाला: "+profileDisplay(profileMap.get(r.reporter_id),r.reporter_id);const reason=document.createElement("span");reason.className="report-reason";reason.textContent=REPORT_REASON_LABELS[r.reason]||r.reason;const note=document.createElement("div");note.className="meta";note.textContent=r.details||"कोई अतिरिक्त विवरण नहीं दिया गया।";const state=document.createElement("div");state.className="status-note";state.textContent=`स्थिति: ${adminReportStatusLabel(r.status)} • ${new Date(r.created_at).toLocaleString("hi-IN")}`;item.append(target,reporter,reason,note,state);
+  if(r.admin_note){const adminNote=document.createElement("div");adminNote.className="meta";adminNote.textContent="व्यवस्थापक नोट: "+r.admin_note;item.append(adminNote)}
+  const actions=document.createElement("div");actions.className="tool-item-actions";
+  if(r.status!=="reviewed"&&r.status!=="dismissed"&&r.status!=="actioned"){const review=document.createElement("button");review.className="btn outline";review.type="button";review.textContent="समीक्षित करें";review.onclick=()=>setReportStatus(r.id,"reviewed","रिपोर्ट की समीक्षा की गई।");actions.append(review)}
+  if(r.status!=="dismissed"&&r.status!=="actioned"){const dismiss=document.createElement("button");dismiss.className="btn outline";dismiss.type="button";dismiss.textContent="रिपोर्ट खारिज करें";dismiss.onclick=()=>setReportStatus(r.id,"dismissed","रिपोर्ट की समीक्षा के बाद खारिज की गई।");const hide=document.createElement("button");hide.className="btn primary";hide.type="button";hide.textContent="प्रोफाइल छिपाएँ";hide.onclick=()=>moderateReportedProfile(r);actions.append(dismiss,hide)}
+  item.append(actions);box.append(item)
+ });
+}
+function renderAdminProfiles(profiles){
+ const box=$("adminProfilesList");box.replaceChildren();if(!profiles.length){box.innerHTML='<div class="empty">कोई प्रोफाइल नहीं मिली।</div>';return}
+ profiles.forEach(p=>{const item=document.createElement("div");item.className="tool-item";const name=document.createElement("strong");name.textContent=p.display_name||"बिना नाम की प्रोफाइल";const meta=document.createElement("div");meta.className="meta";meta.textContent=[p.gender,p.age?`${p.age} वर्ष`:null,p.community,[p.district,p.state].filter(Boolean).join(", ")].filter(Boolean).join(" • ");const state=document.createElement("span");state.className=p.is_moderated_hidden?"moderation-hidden":"report-reason";state.textContent=p.is_moderated_hidden?"मॉडरेशन में छिपी":p.is_published?"प्रकाशित":"अप्रकाशित";item.append(name,meta,state);const actions=document.createElement("div");actions.className="tool-item-actions";
+  if(p.is_moderated_hidden){const show=document.createElement("button");show.className="btn outline";show.type="button";show.textContent="पुनः प्रकाशित करें";show.onclick=()=>restoreModeratedProfile(p);actions.append(show)}else if(p.is_published){const hide=document.createElement("button");hide.className="btn outline";hide.type="button";hide.textContent="प्रोफाइल छिपाएँ";hide.onclick=()=>hideProfileByAdmin(p);actions.append(hide)}
+  item.append(actions);box.append(item)
+ });
+}
+async function setReportStatus(reportId,nextStatus,note){
+ if(!isAdminUser)return;try{const {error}=await sb.from("reports").update({status:nextStatus,admin_note:note}).eq("id",reportId);if(error)throw error;status("adminStatus","रिपोर्ट की स्थिति अपडेट हो गई।","success");await loadAdminDashboard()}catch(e){console.error(e);status("adminStatus","रिपोर्ट अपडेट नहीं हुई: "+e.message,"error")}
+}
+async function hideProfileByAdmin(p){if(!isAdminUser)return;if(!window.confirm(`${p.display_name||"इस प्रोफाइल"} को सार्वजनिक खोज से छिपाएँ?`))return;try{const {error}=await sb.from("profiles").update({is_published:false,is_moderated_hidden:true}).eq("id",p.id);if(error)throw error;status("adminStatus","प्रोफाइल छिपा दी गई है।","success");await loadPublic();await loadAdminDashboard()}catch(e){console.error(e);status("adminStatus","प्रोफाइल नहीं छिपी: "+e.message,"error")}}
+async function restoreModeratedProfile(p){if(!isAdminUser)return;if(!window.confirm(`${p.display_name||"इस प्रोफाइल"} को फिर से प्रकाशित करें?`))return;try{const {error}=await sb.from("profiles").update({is_moderated_hidden:false,is_published:true}).eq("id",p.id);if(error)throw error;status("adminStatus","प्रोफाइल फिर से प्रकाशित कर दी गई है।","success");await loadPublic();await loadAdminDashboard()}catch(e){console.error(e);status("adminStatus","प्रोफाइल फिर से प्रकाशित नहीं हुई: "+e.message,"error")}}
+async function moderateReportedProfile(r){const p=allProfiles.find(x=>x.id===r.reported_user_id)||{id:r.reported_user_id,display_name:"यह प्रोफाइल"};if(!window.confirm(`${p.display_name} को छिपाएँ और रिपोर्ट को कार्रवाई-पूर्ण चिह्नित करें?`))return;try{const {error:profileError}=await sb.from("profiles").update({is_published:false,is_moderated_hidden:true}).eq("id",r.reported_user_id);if(profileError)throw profileError;const {error:reportError}=await sb.from("reports").update({status:"actioned",admin_note:"रिपोर्ट की समीक्षा कर प्रोफाइल को सार्वजनिक खोज से छिपाया गया।"}).eq("id",r.id);if(reportError)throw reportError;status("adminStatus","कार्रवाई पूरी हुई।","success");await loadPublic();await loadAdminDashboard()}catch(e){console.error(e);status("adminStatus","कार्रवाई पूरी नहीं हुई: "+e.message,"error")}}
+$("refreshAdminBtn").addEventListener("click",loadAdminDashboard);
 function statusLabel(value){return value==="accepted"?"स्वीकार किया गया":value==="declined"?"अस्वीकार किया गया":"लंबित"}
 function statusClass(value){return value==="accepted"?"accepted":value==="declined"?"declined":""}
 function profileLabel(p,id){return p?.display_name||`सदस्य (${String(id||"").slice(0,8)}…)`}
@@ -373,7 +562,7 @@ function refreshPhotoPreview(url){
  else {img.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='82' height='82'%3E%3Crect width='100%25' height='100%25' rx='41' fill='%23fff0f2'/%3E%3Ctext x='50%25' y='58%25' font-size='32' text-anchor='middle'%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E";txt.textContent="अभी कोई फोटो नहीं चुनी गई है।";$ ("removePhotoBtn").disabled=true;}
 }
 async function loadMyProfile(){if(!sb||!user)return;const {data,error}=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();if(error){status("accountStatus","प्रोफाइल पढ़ने में समस्या: "+error.message,"error");return}if(!data){status("accountStatus","लॉगिन सफल है। अब नीचे अपनी प्रोफाइल भरें।","success");return}$("displayName").value=data.display_name||"";$("gender").value=data.gender||"";$("age").value=data.age||"";$("regCommunity").value=data.community||"";$("regState").value=data.state||"";$("district").value=data.district||"";$("education").value=data.education||"";$("occupation").value=data.occupation||"";$("photoUrl").value=data.photo_url||"";currentPhotoPath=storagePathFromPublicUrl(data.photo_url);pendingPhotoPath=null;refreshPhotoPreview(data.photo_url||"");$("photoFile").value="";$("bio").value=data.bio||"";$("publish").checked=!!data.is_published;status("accountStatus",data.is_published?"आपकी प्रोफाइल सेव है और सार्वजनिक खोज में दिखाई दे रही है।":"आपकी प्रोफाइल सेव है, लेकिन अभी सार्वजनिक नहीं है।","success")}
-function authUI(u){const priorId=user?.id||null;user=u;$("signedOut").classList.toggle("hidden",!!u);$("signedIn").classList.toggle("hidden",!u);if(u){$("userEmail").textContent=u.email||"लॉगिन सदस्य";clearStatus("authStatus");$("interestManager").classList.remove("hidden");$("chatManager").classList.remove("hidden");loadMyProfile();loadMyInterests();loadChatConversations();startUserRealtime()}else{if(priorId)stopUserRealtime();$("interestManager").classList.add("hidden");$("chatManager").classList.add("hidden");activeChat=null;$("chatConversations").replaceChildren();$("chatMessages").replaceChildren();$("profileForm").reset();currentPhotoPath=null;pendingPhotoPath=null;refreshPhotoPreview("");$("photoFile").value="";clearStatus("profileStatus");clearStatus("accountStatus");clearStatus("photoUploadStatus");clearStatus("interestStatus")}applyFilters()}
+function authUI(u){const priorId=user?.id||null;user=u;$("signedOut").classList.toggle("hidden",!!u);$("signedIn").classList.toggle("hidden",!u);if(u){$("userEmail").textContent=u.email||"लॉगिन सदस्य";clearStatus("authStatus");$("interestManager").classList.remove("hidden");$("chatManager").classList.remove("hidden");$("memberSafetyManager").classList.remove("hidden");loadMyProfile();loadMyInterests();loadChatConversations();startUserRealtime();loadMyBlocks();loadFavorites();checkAdminRole()}else{if(priorId)stopUserRealtime();$("interestManager").classList.add("hidden");$("chatManager").classList.add("hidden");$("memberSafetyManager").classList.add("hidden");$("adminManager").classList.add("hidden");isAdminUser=false;favoriteIds.clear();blockedIds.clear();activeChat=null;$("chatConversations").replaceChildren();$("chatMessages").replaceChildren();$("profileForm").reset();currentPhotoPath=null;pendingPhotoPath=null;refreshPhotoPreview("");$("photoFile").value="";clearStatus("profileStatus");clearStatus("accountStatus");clearStatus("photoUploadStatus");clearStatus("interestStatus")}applyFilters()}
 async function init(){renderProfiles(demos);if(!sb){status("authStatus","Supabase client लोड नहीं हुआ। इंटरनेट कनेक्शन जाँचें और पेज रिफ्रेश करें।","error");await loadPublic();return}const {data,error}=await sb.auth.getSession();if(error)status("authStatus","लॉगिन की स्थिति जाँचने में समस्या: "+error.message,"error");authUI(data?.session?.user||null);sb.auth.onAuthStateChange((_ev,session)=>authUI(session?.user||null));await loadPublic()}
 $("signupBtn").onclick=async()=>{clearStatus("authStatus");const email=$("email").value.trim(),password=$("password").value;if(!email||password.length<8){status("authStatus","मान्य ईमेल और कम से कम 8 अक्षर का पासवर्ड दर्ज करें।","error");return}$("signupBtn").disabled=true;try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:SITE_URL}});if(error)throw error;if(data.session){authUI(data.user||data.session.user);status("authStatus","अकाउंट बन गया और लॉगिन हो गया। अब प्रोफाइल भरें।","success")}else status("authStatus","साइन-अप अनुरोध सफल है। ईमेल खोलकर पुष्टि लिंक पर क्लिक करें। पुष्टि के बाद इसी वेबसाइट पर लौटकर ईमेल और पासवर्ड से लॉगिन करें।","success")}catch(e){status("authStatus","अकाउंट नहीं बन सका: "+e.message,"error")}finally{$("signupBtn").disabled=false}};
 $("authForm").onsubmit=async e=>{e.preventDefault();clearStatus("authStatus");$("loginBtn").disabled=true;try{const {data,error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)throw error;authUI(data.user);status("accountStatus","लॉगिन सफल है।","success");$("profileForm").scrollIntoView({behavior:"smooth",block:"start"})}catch(err){status("authStatus","लॉगिन नहीं हो सका: "+err.message,"error")}finally{$("loginBtn").disabled=false}};
