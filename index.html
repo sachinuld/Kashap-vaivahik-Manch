@@ -583,6 +583,306 @@ body.account-modal-active{overflow:hidden!important}
 <div aria-labelledby="reportModalTitle" aria-modal="true" class="modal" id="reportModal" role="dialog"><div class="modalbox"><button aria-label="बंद करें" class="close" id="reportModalClose" type="button">✕</button><h3 id="reportModalTitle">प्रोफाइल रिपोर्ट करें</h3><p class="sub" id="reportTargetLabel">रिपोर्ट की जा रही प्रोफाइल</p><form id="reportForm"><div class="field"><label for="reportReason">रिपोर्ट का कारण *</label><select id="reportReason" required=""><option value="">कारण चुनें</option><option value="fake_profile">फर्जी प्रोफाइल / गलत जानकारी</option><option value="harassment">परेशान करना / अनुचित संदेश</option><option value="inappropriate_content">अनुचित फोटो या सामग्री</option><option value="scam">धोखाधड़ी / पैसे माँगना</option><option value="other">अन्य</option></select></div><div class="field" style="margin-top:12px"><label for="reportDetails">विवरण (वैकल्पिक)</label><textarea id="reportDetails" maxlength="1000" placeholder="समस्या के बारे में तथ्यात्मक जानकारी दें" rows="4"></textarea></div><div class="actions2" style="margin-top:14px"><button class="btn primary" id="submitReportBtn" type="submit">रिपोर्ट भेजें</button><button class="btn outline" id="cancelReportBtn" type="button">रद्द करें</button></div><div aria-live="polite" class="status" id="reportStatus" role="status"></div></form></div></div>
 <div aria-labelledby="modalTitle" aria-modal="true" class="modal" id="modal" role="dialog"><div class="modalbox"><button aria-label="बंद करें" class="close" id="modalClose">✕</button><h3 id="modalTitle">प्रोफाइल परिचय</h3><p id="modalText"></p><div class="notice" id="modalNote"></div><button class="btn primary" id="modalOkay">ठीक है</button></div></div>
 <div aria-live="polite" class="message-toast hidden" id="messageToast" role="status" tabindex="0"><strong id="messageToastTitle">नया संदेश</strong><span id="messageToastBody"></span><button aria-label="सूचना बंद करें" id="messageToastClose" type="button">✕</button></div>
+<style id="kvm-presence-style">
+/* Online status & last seen — only adds new classes (kvm-*); no existing rule is changed. */
+.kvm-avatar-wrap{position:relative;display:block;flex:0 0 auto;width:max-content;height:max-content;line-height:0}
+.kvm-avatar-dot{position:absolute;right:2px;bottom:2px;width:15px;height:15px;border-radius:50%;background:#1fa653;border:2.5px solid #fff;box-shadow:0 0 0 1px rgba(15,90,94,.2),0 2px 5px rgba(0,0,0,.25);z-index:2;pointer-events:none}
+.kvm-avatar-dot[hidden]{display:none}
+@keyframes kvmPresencePulse{0%{box-shadow:0 0 0 0 rgba(31,166,83,.5),0 2px 5px rgba(0,0,0,.25)}70%{box-shadow:0 0 0 7px rgba(31,166,83,0),0 2px 5px rgba(0,0,0,.25)}100%{box-shadow:0 0 0 0 rgba(31,166,83,0),0 2px 5px rgba(0,0,0,.25)}}
+@media(prefers-reduced-motion:no-preference){.kvm-avatar-dot{animation:kvmPresencePulse 2.4s ease-out infinite}}
+.kvm-presence-line{display:flex;align-items:center;gap:6px;margin:3px 0 4px;font-size:12.5px;line-height:1.3;font-weight:400;color:var(--muted,#75636b);overflow-wrap:anywhere}
+.kvm-presence-line[hidden]{display:none}
+.kvm-presence-line .kvm-presence-pip{flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:#b9aab1}
+.kvm-presence-line.is-online{color:#167a3f;font-weight:600}
+.kvm-presence-line.is-online .kvm-presence-pip{background:#1fa653;box-shadow:0 0 0 2px rgba(31,166,83,.18)}
+@media(max-width:520px){.kvm-presence-line{font-size:12px}.kvm-avatar-dot{width:13px;height:13px;border-width:2px}}
+</style>
+<script id="kvm-presence-script">
+/* Online status & last seen for members.
+   Needs presence_setup.sql to be run once in Supabase. Without it the site keeps working normally
+   and simply shows no status. Everything lives inside window.kvmPresence (no other globals). */
+(function(){
+ 'use strict';
+ if(window.kvmPresence)return;
+ const CFG={
+  HEARTBEAT_MS:30000,      // heartbeat while the member is active
+  OFFLINE_AFTER_S:90,      // no heartbeat for this long => offline
+  GRACE_S:15,              // tolerance while another browser's refresh catches up
+  IDLE_AFTER_MS:300000,    // no interaction for 5 min => treated as inactive (offline)
+  REFRESH_MS:45000,        // re-check last-seen of members visible on screen
+  FETCH_MIN_GAP_MS:20000,  // never re-query the same member more often than this
+  CHUNK:200,
+  CHANNEL:'kvm-members-presence'
+ };
+ const recs=new Map();      // member id -> {key,age,at}   (age = seconds at time "at")
+ const keyToUid=new Map();  // opaque presence key -> member id
+ const fetchedAt=new Map(); // member id -> last query time (ms)
+ let me=null,gen=0,started=false,active=false,ownKey=null,token=null;
+ let channel=null,presenceReady=false,presKeys=new Set();
+ let tickTimer=null,refreshTimer=null,fetchTimer=null,fetching=false,fetchAgain=false;
+ let lastActivity=0,warned=false,langObserver=null,listenersOn=false,lastUnknownFetch=0;
+
+ const lang=()=>document.documentElement.lang==='en'?'en':'hi';
+ const hasSb=()=>typeof sb!=='undefined'&&!!sb;
+ function warnOnce(msg,err){if(warned)return;warned=true;console.warn('[presence] '+msg,err||'')}
+
+ /* ---------- wording (follows the site language selector) ---------- */
+ function onlineText(l){return l==='en'?'Online':'ऑनलाइन'}
+ function seenText(sec,l){
+  const en=l==='en',s=Math.max(0,Math.floor(sec));
+  if(s<60)return en?'Last seen just now':'अभी-अभी ऑनलाइन थे';
+  const m=Math.floor(s/60);
+  if(m<60)return en?`Last seen ${m} minute${m===1?'':'s'} ago`:`${m} मिनट पहले ऑनलाइन थे`;
+  const h=Math.floor(m/60);
+  if(h<24)return en?`Last seen ${h} hour${h===1?'':'s'} ago`:`${h} घंटे पहले ऑनलाइन थे`;
+  const d=Math.floor(h/24);
+  if(d<30)return en?`Last seen ${d} day${d===1?'':'s'} ago`:`${d} दिन पहले ऑनलाइन थे`;
+  return en?'Last seen a long time ago':'काफी समय पहले ऑनलाइन थे';
+ }
+
+ /* ---------- status of one member: {online,age} or null when unknown ---------- */
+ function stateOf(id){
+  const r=recs.get(id);
+  const age=r?r.age+(Date.now()-r.at)/1000:null;
+  if(presenceReady){
+   if(!r)return null;
+   if(presKeys.has(r.key)){
+    if(age>CFG.OFFLINE_AFTER_S+CFG.GRACE_S)return{online:false,age};  // channel says online but heartbeat stopped
+    return{online:true,age};
+   }
+   return{online:false,age};
+  }
+  if(!r)return null;                                  // live channel unavailable: use the heartbeat time only
+  return{online:age<=CFG.OFFLINE_AFTER_S,age};
+ }
+
+ /* ---------- painting ---------- */
+ function paint(el){
+  const id=el.dataset.kvmUid,st=id&&id!==me?stateOf(id):null;
+  if(!st||!me){el.hidden=true;return}
+  const l=lang();
+  el.hidden=false;
+  if(el.classList.contains('kvm-avatar-dot')){el.classList.toggle('is-online',st.online);el.hidden=!st.online;return}
+  const text=st.online?onlineText(l):seenText(st.age,l);
+  el.classList.toggle('is-online',st.online);
+  const t=el.querySelector('.kvm-presence-text');
+  if(t&&t.textContent!==text)t.textContent=text;
+ }
+ function repaintAll(){document.querySelectorAll('[data-kvm-uid]').forEach(paint)}
+ function mkLine(id){
+  const line=document.createElement('span');line.className='kvm-presence-line';line.dataset.kvmUid=id;line.setAttribute('data-no-translate','');line.hidden=true;
+  const pip=document.createElement('i');pip.className='kvm-presence-pip';pip.setAttribute('aria-hidden','true');
+  const t=document.createElement('span');t.className='kvm-presence-text';
+  line.append(pip,t);return line;
+ }
+ function eligible(id){return !!(me&&id&&id!==me)}
+ function register(el){paint(el);scheduleFetch()}
+
+ /* ---------- public decorate helpers (called from the existing render functions) ---------- */
+ function decorateCard(av,who,afterEl,p){           // profile cards / search results
+  if(!p||p.demo||!eligible(p.id)||!av||!av.parentNode)return;
+  const wrap=document.createElement('div');wrap.className='kvm-avatar-wrap';
+  av.replaceWith(wrap);
+  const dot=document.createElement('span');dot.className='kvm-avatar-dot';dot.dataset.kvmUid=p.id;dot.setAttribute('aria-hidden','true');dot.hidden=true;
+  wrap.append(av,dot);
+  const line=mkLine(p.id);afterEl.after(line);
+  register(dot);register(line);
+ }
+ function after(node,id){                           // lists: favorites, interest requests, chat list
+  if(!eligible(id)||!node||!node.parentNode)return;
+  const line=mkLine(id);node.after(line);register(line);
+ }
+ function inside(node,id){                          // chat header (below the name)
+  if(!node)return;
+  node.querySelectorAll('.kvm-presence-line').forEach(x=>x.remove());
+  if(!eligible(id))return;
+  const line=mkLine(id);node.append(line);register(line);
+ }
+ function modal(p){                                 // individual profile popup
+  const h=document.getElementById('modalTitle');if(!h)return;
+  let line=document.getElementById('kvmModalPresence');
+  if(!line){line=mkLine('');line.id='kvmModalPresence';h.after(line)}
+  if(!p||p.demo||!eligible(p.id)){line.dataset.kvmUid='';line.hidden=true;return}
+  line.dataset.kvmUid=p.id;register(line);
+ }
+ function clearUI(){
+  document.querySelectorAll('.kvm-presence-line,.kvm-avatar-dot').forEach(el=>{if(el.id==='kvmModalPresence'){el.dataset.kvmUid='';el.hidden=true}else el.remove()});
+ }
+
+ /* ---------- reading other members' status (one batched query, server-computed age) ---------- */
+ function scheduleFetch(delay){clearTimeout(fetchTimer);fetchTimer=setTimeout(()=>fetchVisible(false),delay==null?250:delay)}
+ async function fetchVisible(force,missingOnly){
+  if(!started||!hasSb())return;
+  if(fetching){fetchAgain=true;return}
+  const myGen=gen,now=Date.now();
+  const ids=[...new Set([...document.querySelectorAll('[data-kvm-uid]')].map(e=>e.dataset.kvmUid).filter(Boolean))].filter(id=>id!==me&&(missingOnly?!recs.has(id):(force||now-(fetchedAt.get(id)||0)>CFG.FETCH_MIN_GAP_MS)));
+  if(!ids.length)return;
+  fetching=true;
+  try{
+   for(let i=0;i<ids.length;i+=CFG.CHUNK){
+    const chunk=ids.slice(i,i+CFG.CHUNK);
+    const {data,error}=await sb.rpc('get_member_presence',{p_user_ids:chunk});
+    if(myGen!==gen)return;
+    if(error)throw error;
+    const t=Date.now(),seen=new Set();
+    (data||[]).forEach(r=>{seen.add(r.user_id);recs.set(r.user_id,{key:r.presence_key,age:Number(r.age_seconds),at:t});keyToUid.set(r.presence_key,r.user_id)});
+    chunk.forEach(id=>{fetchedAt.set(id,t);if(!seen.has(id))recs.delete(id)});
+   }
+   repaintAll();
+  }catch(e){warnOnce('could not read presence (has presence_setup.sql been run?)',e)}
+  finally{fetching=false;if(fetchAgain&&myGen===gen){fetchAgain=false;scheduleFetch(500)}}
+ }
+
+ /* ---------- heartbeat (writes only this member's own row, through the touch function) ---------- */
+ async function beat(){
+  if(!started||!active||!hasSb())return null;
+  const myGen=gen;
+  try{
+   const {data,error}=await sb.rpc('touch_member_presence');
+   if(myGen!==gen)return null;
+   if(error)throw error;
+   if(data)ownKey=data;
+   try{const {data:s}=await sb.auth.getSession();token=s&&s.session?s.session.access_token:token}catch(e){}
+   return ownKey;
+  }catch(e){warnOnce('heartbeat failed (has presence_setup.sql been run?)',e);return null}
+ }
+ function sendFinalBeat(){                          // works while the page is closing / logging out
+  if(!token||typeof sb==='undefined'||!sb||!window.fetch)return;
+  try{fetch(SUPABASE_URL+'/rest/v1/rpc/touch_member_presence',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json',apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:'Bearer '+token},body:'{}'}).catch(()=>{})}catch(e){}
+ }
+
+ /* ---------- live channel (Supabase Realtime Presence) ---------- */
+ function onSync(ch){
+  if(ch!==channel)return;
+  let st={};try{st=ch.presenceState()||{}}catch(e){}
+  const next=new Set(Object.keys(st)),now=Date.now();
+  const touch=k=>{const id=keyToUid.get(k),r=id&&recs.get(id);if(r){r.age=0;r.at=now}};
+  next.forEach(k=>{if(!presKeys.has(k))touch(k)});    // just came online
+  presKeys.forEach(k=>{if(!next.has(k))touch(k)});    // just went offline => "last seen just now"
+  presKeys=next;repaintAll();
+  // someone we have no record for just appeared (e.g. a member's very first visit): look them up soon
+  if(started&&[...next].some(k=>k!==ownKey&&!keyToUid.has(k))&&now-lastUnknownFetch>10000){lastUnknownFetch=now;clearTimeout(fetchTimer);fetchTimer=setTimeout(()=>fetchVisible(false,true),600)}
+ }
+ async function trackSelf(){if(channel&&presenceReady&&active){try{await channel.track({online_at:new Date().toISOString()})}catch(e){}}}
+ function disconnectChannel(){
+  const ch=channel;channel=null;presenceReady=false;presKeys=new Set();
+  if(ch&&hasSb()){try{ch.untrack()}catch(e){}try{sb.removeChannel(ch)}catch(e){}}
+ }
+ async function connectChannel(){
+  disconnectChannel();
+  if(!started||!ownKey||!hasSb())return;
+  const myGen=gen;
+  try{if(sb.realtime&&sb.realtime.setAuth)await sb.realtime.setAuth()}catch(e){}
+  if(myGen!==gen||!started)return;
+  const ch=sb.channel(CFG.CHANNEL,{config:{private:true,presence:{key:ownKey}}});
+  channel=ch;
+  ch.on('presence',{event:'sync'},()=>onSync(ch));
+  ch.subscribe(status=>{
+   if(ch!==channel||myGen!==gen)return;
+   if(status==='SUBSCRIBED'){presenceReady=true;trackSelf();onSync(ch);scheduleFetch(0)}
+   else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED'){
+    presenceReady=false;repaintAll();
+    if(status==='CHANNEL_ERROR')warnOnce('presence channel unavailable; using heartbeat times only (see Realtime policies in presence_setup.sql)');
+   }
+  });
+ }
+ function channelHealthy(){return !!channel&&(channel.state==='joined'||channel.state==='joining')}
+
+ /* ---------- activity / inactivity ---------- */
+ function goActive(){
+  if(!started||active)return;
+  active=true;beat();trackSelf();
+ }
+ function goInactive(){
+  if(!started||!active)return;
+  active=false;
+  if(channel){try{channel.untrack()}catch(e){}}
+ }
+ function goOffline(){                              // explicit logout
+  if(!started)return;
+  active=false;sendFinalBeat();
+  if(channel){try{channel.untrack()}catch(e){}}
+ }
+ function onActivity(){
+  const n=Date.now();
+  if(active&&n-lastActivity<1000)return;
+  lastActivity=n;
+  if(!active)goActive();
+ }
+ function tick(){
+  if(!started)return;
+  if(Date.now()-lastActivity>CFG.IDLE_AFTER_MS){goInactive();repaintAll();return}
+  if(!active)goActive();else beat();
+  repaintAll();                                      // keeps "15 minutes ago" text current
+ }
+ function refreshTick(){
+  if(!started||document.hidden||navigator.onLine===false)return;
+  fetchVisible(true);
+ }
+ function recover(){
+  if(!started)return;
+  onActivity();
+  beat().then(()=>{if(started&&ownKey&&!channelHealthy())connectChannel()});
+  scheduleFetch(0);
+ }
+ const onVisibility=()=>{if(!document.hidden)recover()};
+ const onPageHide=()=>{sendFinalBeat();if(channel){try{channel.untrack()}catch(e){}}};
+ const onPageShow=e=>{if(e.persisted)recover()};
+ const onOffline=()=>{presenceReady=false;repaintAll()};
+ const onLogoutClick=()=>goOffline();
+ const ACT=['pointerdown','keydown','touchstart','scroll','mousemove'];
+ function addListeners(){
+  if(listenersOn)return;listenersOn=true;
+  ACT.forEach(ev=>window.addEventListener(ev,onActivity,{passive:true,capture:true}));
+  document.addEventListener('visibilitychange',onVisibility);
+  window.addEventListener('pagehide',onPageHide);
+  window.addEventListener('pageshow',onPageShow);
+  window.addEventListener('online',recover);
+  window.addEventListener('offline',onOffline);
+  const lo=document.getElementById('logoutBtn');if(lo)lo.addEventListener('click',onLogoutClick,true);
+  langObserver=new MutationObserver(repaintAll);
+  langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});
+ }
+ function removeListeners(){
+  if(!listenersOn)return;listenersOn=false;
+  ACT.forEach(ev=>window.removeEventListener(ev,onActivity,{capture:true}));
+  document.removeEventListener('visibilitychange',onVisibility);
+  window.removeEventListener('pagehide',onPageHide);
+  window.removeEventListener('pageshow',onPageShow);
+  window.removeEventListener('online',recover);
+  window.removeEventListener('offline',onOffline);
+  const lo=document.getElementById('logoutBtn');if(lo)lo.removeEventListener('click',onLogoutClick,true);
+  if(langObserver){langObserver.disconnect();langObserver=null}
+ }
+
+ /* ---------- start / stop (called from authUI) ---------- */
+ async function start(u){
+  if(!u||!u.id||!hasSb())return;
+  if(started&&me===u.id)return;                      // authUI fires on every token refresh: stay idempotent
+  if(started)stop();
+  const myGen=++gen;
+  me=u.id;started=true;active=true;lastActivity=Date.now();
+  addListeners();
+  tickTimer=setInterval(tick,CFG.HEARTBEAT_MS);
+  refreshTimer=setInterval(refreshTick,CFG.REFRESH_MS);
+  await beat();
+  if(myGen!==gen||!started)return;
+  if(ownKey)connectChannel();
+  scheduleFetch(0);
+ }
+ function stop(){
+  gen++;
+  clearInterval(tickTimer);clearInterval(refreshTimer);clearTimeout(fetchTimer);tickTimer=refreshTimer=fetchTimer=null;
+  removeListeners();
+  disconnectChannel();
+  started=false;active=false;me=null;ownKey=null;token=null;fetching=false;fetchAgain=false;
+  recs.clear();keyToUid.clear();fetchedAt.clear();
+  clearUI();
+ }
+
+ window.kvmPresence={start,stop,goOffline,decorateCard,after,inside,modal,_debug:()=>({me,started,active,ownKey,presenceReady,keys:[...presKeys],recs:[...recs.entries()]})};
+})();
+</script>
 <script>
 // केवल frontend के लिए बने Supabase URL और Publishable key का इस्तेमाल करें। Secret/service_role key यहाँ कभी न डालें।
 const SUPABASE_URL="https://lgdhrhaiydlothzchqba.supabase.co";
@@ -622,7 +922,7 @@ function renderProfiles(items){
   const top=document.createElement("div");top.className="ptop";
   const av=document.createElement("div");av.className="avatar";
   if(p.photo_url&&!p.demo){const im=document.createElement("img");im.src=p.photo_url;im.alt="प्रोफाइल फोटो";im.loading="lazy";im.referrerPolicy="no-referrer";im.onerror=()=>{av.textContent=p.gender==="दुल्हन"?"👩":"👨"};av.append(im)}else av.textContent=p.emoji||(p.gender==="दुल्हन"?"👩":"👨");
-  const who=document.createElement("div"),h=document.createElement("h3"),sub=document.createElement("p"),tag=document.createElement("span");h.textContent=p.display_name||"सदस्य प्रोफाइल";sub.textContent=`${genderLabel(p.gender)} • ${p.age} वर्ष`;tag.className="tag"+(p.demo?"":" real");tag.textContent=p.demo?"डेमो • वास्तविक सदस्य नहीं":"सदस्य प्रोफाइल";who.append(h,sub,tag);top.append(av,who);
+  const who=document.createElement("div"),h=document.createElement("h3"),sub=document.createElement("p"),tag=document.createElement("span");h.textContent=p.display_name||"सदस्य प्रोफाइल";sub.textContent=`${genderLabel(p.gender)} • ${p.age} वर्ष`;tag.className="tag"+(p.demo?"":" real");tag.textContent=p.demo?"डेमो • वास्तविक सदस्य नहीं":"सदस्य प्रोफाइल";who.append(h,sub,tag);top.append(av,who);window.kvmPresence&&kvmPresence.decorateCard(av,who,h,p);
   const body=document.createElement("div");body.className="pbody";const det=document.createElement("div");det.className="details";
   [["समुदाय",p.community],["ऊँचाई",heightLabel(p.height_cm)],["रंगत",p.complexion],["शिक्षा",p.education],["स्थान",[p.district,p.state].filter(Boolean).join(", ")],["व्यवसाय",p.occupation]].forEach(([label,value])=>{const x=document.createElement("span");x.textContent=label;const b=document.createElement("b");b.textContent=value||"—";x.append(b);det.append(x)});body.append(det);
   if(p.bio){const bio=document.createElement("p");bio.style.cssText="font-size:13px;color:#65575d;margin:13px 0 0;overflow-wrap:anywhere";bio.textContent=p.bio;body.append(bio)}
@@ -640,7 +940,7 @@ function renderProfiles(items){
   grid.append(card);
  });
 }
-function showProfile(p,note="यहाँ केवल प्रकाशित वैवाहिक जानकारी दिखाई जाती है।"){$("modalTitle").textContent=p.display_name||"प्रोफाइल";$ ("modalText").textContent=`${genderLabel(p.gender)} • ${p.age} वर्ष। समुदाय: ${p.community}। ऊँचाई: ${heightLabel(p.height_cm)||"—"}। रंगत: ${p.complexion||"—"}। स्थान: ${[p.district,p.state].filter(Boolean).join(", ")||"उपलब्ध नहीं"}। शिक्षा: ${p.education||"—"}। व्यवसाय: ${p.occupation||"—"}।`;$ ("modalNote").textContent=note;$ ("modal").classList.add("open")}
+function showProfile(p,note="यहाँ केवल प्रकाशित वैवाहिक जानकारी दिखाई जाती है।"){$("modalTitle").textContent=p.display_name||"प्रोफाइल";$ ("modalText").textContent=`${genderLabel(p.gender)} • ${p.age} वर्ष। समुदाय: ${p.community}। ऊँचाई: ${heightLabel(p.height_cm)||"—"}। रंगत: ${p.complexion||"—"}। स्थान: ${[p.district,p.state].filter(Boolean).join(", ")||"उपलब्ध नहीं"}। शिक्षा: ${p.education||"—"}। व्यवसाय: ${p.occupation||"—"}।`;$ ("modalNote").textContent=note;window.kvmPresence&&kvmPresence.modal(p);$ ("modal").classList.add("open")}
 function applyFilters(){
  const g=$("lookingFor").value,c=$("community").value,hf=$("heightFilter").value,cf=$("complexionFilter").value,s=$("stateFilter").value;
  const district=($("districtFilter").value||"").trim().toLocaleLowerCase(),education=($("educationFilter").value||"").trim().toLocaleLowerCase(),occupation=($("occupationFilter").value||"").trim().toLocaleLowerCase();
@@ -716,7 +1016,7 @@ async function loadFavorites(){
   const map=new Map((people||[]).map(p=>[p.id,p]));const items=rows.map(r=>map.get(r.profile_id)).filter(p=>p&&p.is_published&&!blockedIds.has(p.id));
   $("favoritesCount").textContent=`(${items.length})`;box.replaceChildren();
   if(!items.length){box.innerHTML='<div class="empty">आपकी पसंदीदा सूची में अभी दिखाई जा सकने वाली प्रोफाइल नहीं है। कुछ प्रोफाइल छिपाई गई हो सकती हैं या ब्लॉक की गई होंगी।</div>';applyFilters();return}
-  items.forEach(p=>{const item=document.createElement("div");item.className="tool-item";const name=document.createElement("strong");name.textContent=p.display_name||"सदस्य";const meta=document.createElement("div");meta.className="meta";meta.textContent=[genderLabel(p.gender),p.age?`${p.age} वर्ष`:null,p.community,[p.district,p.state].filter(Boolean).join(", ")].filter(Boolean).join(" • ");const actions=document.createElement("div");actions.className="tool-item-actions";const view=document.createElement("button");view.className="btn outline";view.type="button";view.textContent="परिचय देखें";view.onclick=()=>{const full=allProfiles.find(x=>x.id===p.id)||p;showProfile(full)};const remove=document.createElement("button");remove.className="btn outline";remove.type="button";remove.textContent="★ पसंदीदा से हटाएँ";remove.onclick=()=>toggleFavorite(p);actions.append(view,remove);item.append(name,meta,actions);box.append(item)});
+  items.forEach(p=>{const item=document.createElement("div");item.className="tool-item";const name=document.createElement("strong");name.textContent=p.display_name||"सदस्य";const meta=document.createElement("div");meta.className="meta";meta.textContent=[genderLabel(p.gender),p.age?`${p.age} वर्ष`:null,p.community,[p.district,p.state].filter(Boolean).join(", ")].filter(Boolean).join(" • ");const actions=document.createElement("div");actions.className="tool-item-actions";const view=document.createElement("button");view.className="btn outline";view.type="button";view.textContent="परिचय देखें";view.onclick=()=>{const full=allProfiles.find(x=>x.id===p.id)||p;showProfile(full)};const remove=document.createElement("button");remove.className="btn outline";remove.type="button";remove.textContent="★ पसंदीदा से हटाएँ";remove.onclick=()=>toggleFavorite(p);actions.append(view,remove);item.append(name,meta,actions);box.append(item);window.kvmPresence&&kvmPresence.after(name,p.id)});
   applyFilters();
  }catch(e){console.error(e);box.innerHTML='<div class="empty">पसंदीदा प्रोफाइल लोड नहीं हो सकीं। SQL/RLS सेटअप जाँचें।</div>';status("favoritesStatus","पसंदीदा लोड नहीं हुईं: "+e.message,"error")}
 }
@@ -819,7 +1119,7 @@ function renderInterestRows(targetId,rows,direction,profileMap){
   const meta=document.createElement("div");meta.className="meta";
   const parts=[];if(p?.gender)parts.push(genderLabel(p.gender));if(p?.age)parts.push(`${p.age} वर्ष`);if(p?.community)parts.push(p.community);if(p?.district||p?.state)parts.push([p.district,p.state].filter(Boolean).join(", "));meta.textContent=parts.join(" • ")||"प्रोफाइल की कुछ जानकारी उपलब्ध नहीं है";
   const badge=document.createElement("span");badge.className="interest-state "+statusClass(row.status);badge.textContent=statusLabel(row.status);
-  item.append(name,meta,badge);
+  item.append(name,meta,badge);window.kvmPresence&&kvmPresence.after(name,otherId);
   if(direction==="incoming"&&row.status==="pending"){
    const actions=document.createElement("div");actions.className="item-actions";
    const accept=document.createElement("button");accept.className="btn primary";accept.type="button";accept.textContent="स्वीकार करें";accept.onclick=()=>respondToInterest(row,"accepted");
@@ -898,10 +1198,10 @@ async function loadChatConversations(){
 function renderChatConversations(){
  const list=$("chatConversations");list.replaceChildren();
  if(!chatConversations.length){const e=document.createElement("div");e.className="empty";e.textContent="अभी कोई स्वीकार की गई बातचीत नहीं है। पहले किसी रुचि अनुरोध को स्वीकार करना होगा।";list.append(e);return}
- chatConversations.forEach(conv=>{const b=document.createElement("button");b.type="button";b.className="chat-conversation"+(activeChat&&activeChat.id===conv.id?" active":"");const strong=document.createElement("strong");strong.textContent=conv.otherName;const small=document.createElement("small");small.textContent="स्वीकार किया गया अनुरोध · संदेश खोलें";b.append(strong,small);b.addEventListener("click",()=>openChat(conv));list.append(b)})
+ chatConversations.forEach(conv=>{const b=document.createElement("button");b.type="button";b.className="chat-conversation"+(activeChat&&activeChat.id===conv.id?" active":"");const strong=document.createElement("strong");strong.textContent=conv.otherName;const small=document.createElement("small");small.textContent="स्वीकार किया गया अनुरोध · संदेश खोलें";b.append(strong,small);window.kvmPresence&&kvmPresence.after(strong,conv.otherId);b.addEventListener("click",()=>openChat(conv));list.append(b)})
 }
 async function openChat(conv){
- activeChat=conv;$ ("chatEmpty").classList.add("hidden");$ ("chatActive").classList.remove("hidden");$ ("chatPartnerName").textContent=conv.otherName;$ ("chatInput").focus();renderChatConversations();await loadChatMessages();subscribeToActiveChat();
+ activeChat=conv;$ ("chatEmpty").classList.add("hidden");$ ("chatActive").classList.remove("hidden");$ ("chatPartnerName").textContent=conv.otherName;window.kvmPresence&&kvmPresence.inside($ ("chatPartnerName"),conv.otherId);$ ("chatInput").focus();renderChatConversations();await loadChatMessages();subscribeToActiveChat();
 }
 function formatChatTime(value){try{return new Intl.DateTimeFormat("hi-IN",{dateStyle:"short",timeStyle:"short"}).format(new Date(value))}catch{return ""}}
 function showMessageToast(title,body){
@@ -1027,7 +1327,7 @@ function refreshPhotoPreview(url){
  else {img.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='82' height='82'%3E%3Crect width='100%25' height='100%25' rx='41' fill='%23fff0f2'/%3E%3Ctext x='50%25' y='58%25' font-size='32' text-anchor='middle'%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E";txt.textContent="अभी कोई फोटो नहीं चुनी गई है।";$ ("removePhotoBtn").disabled=true;}
 }
 async function loadMyProfile(){if(!sb||!user)return;const {data,error}=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();if(error){status("accountStatus","प्रोफाइल पढ़ने में समस्या: "+error.message,"error");return}if(!data){status("accountStatus","लॉगिन सफल है। अब नीचे अपनी प्रोफाइल भरें।","success");return}$("displayName").value=data.display_name||"";$("gender").value=data.gender||"";$("age").value=data.age||"";$("heightCm").value=data.height_cm==null?"":String(data.height_cm);$("complexion").value=data.complexion||"";$("regCommunity").value=data.community||"";$("regState").value=data.state||"";$("district").dataset.savedDistrict=data.district||""; if($("regState").value && typeof window.updateProfileDistrict === "function") window.updateProfileDistrict(data.district||"");$("education").value=data.education||"";$("occupation").value=data.occupation||"";$("photoUrl").value=data.photo_url||"";currentPhotoPath=storagePathFromPublicUrl(data.photo_url);pendingPhotoPath=null;refreshPhotoPreview(data.photo_url||"");$("photoFile").value="";$("bio").value=data.bio||"";$("publish").checked=!!data.is_published;status("accountStatus",data.is_published?"आपकी प्रोफाइल सेव है और सार्वजनिक खोज में दिखाई दे रही है।":"आपकी प्रोफाइल सेव है, लेकिन अभी सार्वजनिक नहीं है।","success")}
-function authUI(u){const priorId=user?.id||null;user=u;$("signedOut").classList.toggle("hidden",!!u);$("signedIn").classList.toggle("hidden",!u);$("sidebarLogoutBtn").classList.toggle("hidden",!u);if(u){$("userEmail").textContent=u.email||"लॉगिन सदस्य";clearStatus("authStatus");$("interestManager").classList.remove("hidden");$("chatManager").classList.remove("hidden");$("memberSafetyManager").classList.remove("hidden");loadMyProfile();loadMyInterests();loadChatConversations();startUserRealtime();loadMyBlocks();loadFavorites();checkAdminRole()}else{if(priorId)stopUserRealtime();$("interestManager").classList.add("hidden");$("chatManager").classList.add("hidden");$("memberSafetyManager").classList.add("hidden");$("adminManager").classList.add("hidden");isAdminUser=false;favoriteIds.clear();blockedIds.clear();activeChat=null;$("chatConversations").replaceChildren();$("chatMessages").replaceChildren();$("profileForm").reset();currentPhotoPath=null;pendingPhotoPath=null;refreshPhotoPreview("");$("photoFile").value="";clearStatus("profileStatus");clearStatus("accountStatus");clearStatus("photoUploadStatus");clearStatus("interestStatus")}applyFilters()}
+function authUI(u){const priorId=user?.id||null;user=u;$("signedOut").classList.toggle("hidden",!!u);$("signedIn").classList.toggle("hidden",!u);$("sidebarLogoutBtn").classList.toggle("hidden",!u);if(u){$("userEmail").textContent=u.email||"लॉगिन सदस्य";clearStatus("authStatus");$("interestManager").classList.remove("hidden");$("chatManager").classList.remove("hidden");$("memberSafetyManager").classList.remove("hidden");loadMyProfile();loadMyInterests();loadChatConversations();startUserRealtime();window.kvmPresence&&kvmPresence.start(u);loadMyBlocks();loadFavorites();checkAdminRole()}else{if(priorId)stopUserRealtime();window.kvmPresence&&kvmPresence.stop();$("interestManager").classList.add("hidden");$("chatManager").classList.add("hidden");$("memberSafetyManager").classList.add("hidden");$("adminManager").classList.add("hidden");isAdminUser=false;favoriteIds.clear();blockedIds.clear();activeChat=null;$("chatConversations").replaceChildren();$("chatMessages").replaceChildren();$("profileForm").reset();currentPhotoPath=null;pendingPhotoPath=null;refreshPhotoPreview("");$("photoFile").value="";clearStatus("profileStatus");clearStatus("accountStatus");clearStatus("photoUploadStatus");clearStatus("interestStatus")}applyFilters()}
 async function init(){renderProfiles(demos);if(!sb){status("authStatus","Supabase client लोड नहीं हुआ। इंटरनेट कनेक्शन जाँचें और पेज रिफ्रेश करें।","error");await loadPublic();return}const {data,error}=await sb.auth.getSession();if(error)status("authStatus","लॉगिन की स्थिति जाँचने में समस्या: "+error.message,"error");authUI(data?.session?.user||null);sb.auth.onAuthStateChange((event,session)=>{if(event==="PASSWORD_RECOVERY"){showPasswordRecovery();return}authUI(session?.user||null)});if(window.location.hash.includes("type=recovery"))showPasswordRecovery();await loadPublic()}
 $("signupBtn").onclick=async()=>{clearStatus("authStatus");const email=$("email").value.trim(),password=$("password").value;if(!email||password.length<8){status("authStatus","मान्य ईमेल और कम से कम 8 अक्षर का पासवर्ड दर्ज करें।","error");return}if(!$("disclaimerConsent").checked){$("disclaimerConsentLabel").classList.add("consent-error");status("authStatus","अकाउंट बनाने के लिए कृपया अस्वीकरण एवं नियम पढ़कर सहमति वाला बॉक्स चुनें।","error");$("disclaimerConsent").focus();return}$("disclaimerConsentLabel").classList.remove("consent-error");$("signupBtn").disabled=true;try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:SITE_URL,data:{disclaimer_accepted:true,disclaimer_accepted_at:new Date().toISOString(),disclaimer_version:"1.0"}}});if(error)throw error;if(data.session){authUI(data.user||data.session.user);status("authStatus","अकाउंट बन गया और लॉगिन हो गया। अब प्रोफाइल भरें।","success")}else status("authStatus","साइन-अप अनुरोध सफल है। ईमेल खोलकर पुष्टि लिंक पर क्लिक करें। पुष्टि के बाद इसी वेबसाइट पर लौटकर ईमेल और पासवर्ड से लॉगिन करें।","success")}catch(e){status("authStatus","अकाउंट नहीं बन सका: "+e.message,"error")}finally{$("signupBtn").disabled=false}};
 $("authForm").onsubmit=async e=>{e.preventDefault();clearStatus("authStatus");$("loginBtn").disabled=true;try{const {data,error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error)throw error;authUI(data.user);status("accountStatus","लॉगिन सफल है।","success");$("profileForm").scrollIntoView({behavior:"smooth",block:"start"})}catch(err){status("authStatus","लॉगिन नहीं हो सका: "+err.message,"error")}finally{$("loginBtn").disabled=false}};
